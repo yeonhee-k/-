@@ -4,12 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GO climb</title>
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
   <style>
     * { box-sizing: border-box; }
-
     :root {
       --blue: #2563eb;
       --navy: #172b4d;
@@ -17,269 +14,91 @@
       --line: #e8edf4;
       --bg: #f5f8fc;
     }
+    body { margin: 0; font-family: "Malgun Gothic", Arial, sans-serif; color: var(--navy); background: var(--bg); }
+    header { min-height: 84px; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: white; border-bottom: 1px solid var(--line); }
+    header h1 { margin: 0 0 6px; font-size: 23px; letter-spacing: -1px; }
+    header p { margin: 0; color: var(--muted); font-size: 13px; }
+    .layout { display: grid; grid-template-columns: 340px minmax(0, 1fr); height: calc(100vh - 84px); min-height: 500px; }
+    .sidebar { padding: 22px 18px; overflow-y: auto; background: white; border-right: 1px solid var(--line); }
+    #search { width: 100%; padding: 14px 16px; border: 1px solid #dce4ef; border-radius: 14px; outline: none; font-size: 14px; }
+    #search:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #2563eb18; }
+    #count { margin: 20px 2px 12px; font-size: 13px; color: var(--muted); }
+    .gym { padding: 18px 12px; margin: 0 -6px 8px; border: 1px solid var(--line); border-radius: 14px; background: white; }
+    .gym:hover { border-color: #bfd2ff; box-shadow: 0 5px 18px #243b530b; }
+    .gym h3 { margin: 0 0 10px; font-size: 16px; }
+    .gym p { margin: 7px 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .gym button { width: 100%; margin-top: 10px; padding: 11px; border: 0; border-radius: 9px; background: #edf4ff; color: var(--blue); font-weight: 700; cursor: pointer; }
+    .gym button:hover { background: var(--blue); color: white; }
+    .facility-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .facility-tag { display: inline-block; padding: 5px 8px; border-radius: 6px; background: #edf4ff; color: #2563eb; font-size: 11px; font-weight: 700; }
+    #map { width: 100%; height: 100%; min-height: 500px; background: #e7f0fa; z-index: 1; }
+    .leaflet-popup-content-wrapper { border-radius: 12px; }
+    .leaflet-popup-content { font-size: 13px; line-height: 1.7; }
+    .gym-popup h3 { margin: 0 0 6px; font-size: 16px; }
+    .gym-popup p { margin: 5px 0; }
+    .gym-filter-panel { width: 205px; padding: 14px; background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15); color: #243047; font-size: 13px; }
+    .gym-filter-panel h3 { margin: 0 0 10px; font-size: 15px; }
+    .gym-filter-panel label { display: flex; align-items: center; gap: 8px; margin: 10px 0; cursor: pointer; }
+    .gym-filter-panel input[type="checkbox"] { width: 16px; height: 16px; accent-color: #3978f6; cursor: pointer; }
+    .gym-filter-panel button { width: 100%; margin-top: 8px; padding: 9px; border: none; border-radius: 8px; background: #edf3ff; color: #2864df; font-weight: bold; cursor: pointer; }
+    .gym-filter-panel button:hover { background: #dce8ff; }
 
-    body {
-      margin: 0;
-      font-family: "Malgun Gothic", Arial, sans-serif;
-      color: var(--navy);
-      background: var(--bg);
-    }
-
-    header {
-      min-height: 84px;
-      padding: 16px 28px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      background: white;
-      border-bottom: 1px solid var(--line);
-    }
-
-    header h1 {
-      margin: 0 0 6px;
-      font-size: 23px;
-      letter-spacing: -1px;
-    }
-
-    header p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: 340px minmax(0, 1fr);
-      height: calc(100vh - 84px);
-      min-height: 500px;
-    }
-
-    .sidebar {
-      padding: 22px 18px;
-      overflow-y: auto;
-      background: white;
-      border-right: 1px solid var(--line);
-    }
-
-    #search {
-      width: 100%;
-      padding: 14px 16px;
-      border: 1px solid #dce4ef;
-      border-radius: 14px;
-      outline: none;
-      font-size: 14px;
-    }
-
-    #search:focus {
-      border-color: var(--blue);
-      box-shadow: 0 0 0 3px #2563eb18;
-    }
-
-    #count {
-      margin: 20px 2px 12px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .gym {
-      padding: 18px 12px;
-      margin: 0 -6px 8px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      background: white;
-    }
-
-    .gym:hover {
-      border-color: #bfd2ff;
-      box-shadow: 0 5px 18px #243b530b;
-    }
-
-    .gym h3 {
-      margin: 0 0 10px;
-      font-size: 16px;
-    }
-
-    .gym p {
-      margin: 7px 0;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    .gym button {
-      width: 100%;
-      margin-top: 10px;
-      padding: 11px;
-      border: 0;
-      border-radius: 9px;
-      background: #edf4ff;
-      color: var(--blue);
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .gym button:hover {
-      background: var(--blue);
-      color: white;
-    }
-
-    .facility-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-top: 10px;
-    }
-
-    .facility-tag {
-      display: inline-block;
-      padding: 5px 8px;
-      border-radius: 6px;
-      background: #edf4ff;
-      color: #2563eb;
-      font-size: 11px;
-      font-weight: 700;
-    }
-
-    #map {
-      width: 100%;
-      height: 100%;
-      min-height: 500px;
-      background: #e7f0fa;
-      z-index: 1;
-    }
-
-    .leaflet-popup-content-wrapper {
-      border-radius: 12px;
-    }
-
-    .leaflet-popup-content {
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
-    .gym-popup h3 {
-      margin: 0 0 6px;
-      font-size: 16px;
-    }
-
-    .gym-popup p {
-      margin: 5px 0;
-    }
-
-    .gym-filter-panel {
-      width: 205px;
-      padding: 14px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-      color: #243047;
-      font-size: 13px;
-    }
-
-    .gym-filter-panel h3 {
-      margin: 0 0 10px;
-      font-size: 15px;
-    }
-
-    .gym-filter-panel label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 10px 0;
-      cursor: pointer;
-    }
-
-    .gym-filter-panel input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: #3978f6;
-      cursor: pointer;
-    }
-
-    .gym-filter-panel button {
-      width: 100%;
-      margin-top: 8px;
-      padding: 9px;
-      border: none;
-      border-radius: 8px;
-      background: #edf3ff;
-      color: #2864df;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .gym-filter-panel button:hover {
-      background: #dce8ff;
-    }
+    /* 카드 안에서 아래로 펼쳐지는 상세 정보 */
+    .gym-details { display: block; width: 100%; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .gym-details summary { cursor: pointer; color: var(--blue); font-weight: 700; padding: 12px 0; list-style: none; font-size: 13px; }
+    .gym-details summary::-webkit-details-marker { display: none; }
+    .gym-details summary::after { content: "＋"; float: right; }
+    .gym-details[open] summary::after { content: "－"; }
+    .details-content { padding: 2px 0 8px; }
+    .details-content p { margin: 10px 0; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+    .detail-label { color: var(--navy); font-weight: 700; }
+    .difficulty-title { margin: 12px 0 7px; color: var(--navy); font-size: 13px; font-weight: 700; }
+    .difficulty-list { display: flex; flex-direction: column; gap: 0; width: 100%; border-radius: 5px; overflow: hidden; }
+    .difficulty-level { display: flex; align-items: center; min-height: 30px; padding: 6px 10px; color: #fff; font-size: 12px; font-weight: 700; text-shadow: 0 1px 2px #0005; }
+    .difficulty-empty { color: var(--muted); font-size: 12px; margin: 6px 0; }
 
     @media (max-width: 700px) {
-      header {
-        min-height: auto;
-        padding: 18px;
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
+      header { min-height: auto; padding: 18px; align-items: flex-start; flex-direction: column; }
       header h1 { font-size: 20px; }
-
-      .layout {
-        display: flex;
-        flex-direction: column;
-        height: auto;
-        min-height: 0;
-      }
-
-      #map {
-        order: 1;
-        height: 55vh;
-        min-height: 360px;
-      }
-
-      .sidebar {
-        order: 2;
-        padding: 16px;
-        overflow: visible;
-        border-right: 0;
-      }
-
+      .layout { display: flex; flex-direction: column; height: auto; min-height: 0; }
+      #map { order: 1; height: 55vh; min-height: 360px; }
+      .sidebar { order: 2; padding: 16px; overflow: visible; border-right: 0; }
       .gym-filter-panel { width: 190px; }
+      .gym { width: 100%; margin: 0 0 12px; padding: 16px; }
+      .gym-details summary { padding: 14px 0; }
+      .details-content p { font-size: 14px; }
+      .difficulty-level { min-height: 32px; }
     }
   </style>
 </head>
-
 <body>
   <header>
     <h1>Go climb</h1>
     <p>내가 가고 싶은 클라이밍 암장을 찾아보세요.</p>
   </header>
-
   <main class="layout">
     <section class="sidebar">
       <input id="search" type="search" placeholder="암장 이름 또는 지역 검색">
       <p id="count"></p>
       <div id="gym-list"></div>
     </section>
-
     <div id="map"></div>
   </main>
-
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <script>
     // 1. 지도 생성
     const map = L.map("map").setView([36.5, 127.8], 7);
-
     L.tileLayer(
-  "https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png?key=cb1_4l07_1_83499e6c83816a4c71e568a7",
-  {
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    maxZoom: 19
-  }
-).addTo(map);
-
+      "https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png?key=cb1_4l07_1_83499e6c83816a4c71e568a7",
+      {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        maxZoom: 19
+      }
+    ).addTo(map);
 
     // 2. 암장 데이터
+    // 상세 정보는 각 암장 객체 안에서 수정하면 됩니다.
+    // difficulty의 각 항목은 위에서부터 아래 순서로 표시됩니다.
     const gyms = [
       {
         id: 1,
@@ -295,7 +114,17 @@
         shower: false,
         operating: true,
         hours: "평일 10:00~23:00 / 주말 10:00~20:00",
-        price: "1일 이용권 20,000원"
+        price: "1일 이용권 20,000원",
+        closedDays: "정보 없음",
+        difficulty: [
+          { name: "쉬움", color: "#22C55E" },
+          { name: "보통", color: "#3B82F6" },
+          { name: "어려움", color: "#EF4444" },
+          { name: "매우 어려움", color: "#292929" }
+        ],
+        groupDiscount: "정보 없음",
+        rentalCost: "정보 없음",
+        tripod: null
       },
       {
         id: 2,
@@ -312,8 +141,18 @@
         operating: true,
         hours: "평일 07:00~23:00 / 주말 09:00~21:00",
         price: "1일 이용권 20,000원",
+        closedDays: "정보 없음",
+        difficulty: [
+          { name: "쉬움", color: "#22C55E" },
+          { name: "보통", color: "#3B82F6" },
+          { name: "어려움", color: "#EF4444" },
+          { name: "매우 어려움", color: "#292929" }
+        ],
+        groupDiscount: "정보 없음",
+        rentalCost: "정보 없음",
+        tripod: null
       },
-{
+      {
         id: 3,
         name: "을지로 담장 클라이밍",
         region: "서울",
@@ -328,15 +167,25 @@
         operating: true,
         hours: "평일 11:00~23:00 / 주말 10:00~18:00",
         price: "1일 이용권 20,000원",
-},
-{
+        closedDays: "정보 없음",
+        difficulty: [
+          { name: "쉬움", color: "#22C55E" },
+          { name: "보통", color: "#3B82F6" },
+          { name: "어려움", color: "#EF4444" },
+          { name: "매우 어려움", color: "#292929" }
+        ],
+        groupDiscount: "정보 없음",
+        rentalCost: "정보 없음",
+        tripod: null
+      },
+      {
         id: 4,
         name: "훅클라이밍 왕십리점",
         region: "서울",
         type: "볼더링",
         address: "서울 성동구 고산자로6길 40 2층 훅클라이밍",
         lat: 37.558312,
-        lng: 127.035188,
+        lng: 127.035562,
         kilterboard: false,
         moonboard2016: false,
         moonboard2024: true,
@@ -344,10 +193,175 @@
         operating: true,
         hours: "평일 10:00~23:00 / 주말 10:00~20:00",
         price: "1일 이용권 20,000원",
+        closedDays: "정보 없음",
+        difficulty: [
+          { name: "쉬움", color: "#22C55E" },
+          { name: "보통", color: "#3B82F6" },
+          { name: "어려움", color: "#EF4444" },
+          { name: "매우 어려움", color: "#292929" }
+        ],
+        groupDiscount: "정보 없음",
+        rentalCost: "정보 없음",
+        tripod: null
       },
+      {
+        id: 5,
+        name: "스톤즈클라이밍",
+        region: "서울",
+        type: "볼더링",
+        address: "서울 관악구 남부순환로 1990-3 닷컴힐즈 B201호",
+        lat: 37.474937,
+        lng: 126.969938,
+        kilterboard: false,
+        moonboard2016: false,
+        moonboard2024: false,
+        shower: false,
+        operating: true,
+        hours: "평일 12:00~24:00 / 토요일 12:00~22:00 / 일요일 12:00~21:00",
+        price: "1일 이용권 20,000원",
+        closedDays: "정보 없음",
+        difficulty: [
+          { name: "쉬움", color: "#22C55E" },
+          { name: "보통", color: "#3B82F6" },
+          { name: "어려움", color: "#EF4444" },
+          { name: "매우 어려움", color: "#292929" }
+        ],
+        groupDiscount: "정보 없음",
+        rentalCost: "정보 없음",
+        tripod: null
+      },
+      {
+        id: 6,
+        name: "투이얼즈클라임하우스",
+        region: "서울",
+        type: "볼더링",
+        address: "서울 강서구 공항대로81길 27",
+        lat: 37.548437,
+        lng: 126.876188,
+        kilterboard: false,
+        moonboard2016: true,
+        moonboard2024: false,
+        shower: false,
+        operating: true,
+        hours: "평일 12:00~22:00 / 주말 12:00~22:00",
+        price: "1일 이용권 20,000원",
+        closedDays: "정보 없음",
+        difficulty: [
+          { name: "쉬움", color: "#22C55E" },
+          { name: "보통", color: "#3B82F6" },
+          { name: "어려움", color: "#EF4444" },
+          { name: "매우 어려움", color: "#292929" }
+        ],
+        groupDiscount: "정보 없음",
+        rentalCost: "정보 없음",
+        tripod: null
+      },
+      {
+        id: 7,
+        name: "서울볼더스 선유",
+        region: "서울",
+        type: "볼더링",
+        address: "서울 영등포구 양평로28마길 7 3층",
+        lat: 37.542063,
+        lng: 126.891063,
+        kilterboard: false,
+        moonboard2016: false,
+        moonboard2024: true,
+        shower: false,
+        operating: true,
+        hours: "평일 12:00~23:00 / 주말 10:00~20:00",
+        price: "1일 이용권 20,000원",
+        closedDays: "정보 없음",
+        difficulty: [
+          { name: "쉬움", color: "#22C55E" },
+          { name: "보통", color: "#3B82F6" },
+          { name: "어려움", color: "#EF4444" },
+          { name: "매우 어려움", color: "#292929" }
+        ],
+        groupDiscount: "정보 없음",
+        rentalCost: "정보 없음",
+        tripod: null
+      },
+      {
+        id: 8,
+        name: "서울숲클라이밍 잠실점",
+        region: "서울",
+        type: "볼더링",
+        address: "서울 송파구 백제고분로7길 49 지하1층",
+        lat: 37.509937,
+        lng: 127.082188,
+        kilterboard: false,
+        moonboard2016: false,
+        moonboard2024: false,
+        shower: false,
+        operating: true,
+        hours: "평일 10:00~23:00 / 주말 10:00~21:00",
+        price: "1일 이용권 20,000원",
+        closedDays: "정보 없음",
+        difficulty: [
+          { name: "쉬움", color: "#22C55E" },
+          { name: "보통", color: "#3B82F6" },
+          { name: "어려움", color: "#EF4444" },
+          { name: "매우 어려움", color: "#292929" }
+        ],
+        groupDiscount: "정보 없음",
+        rentalCost: "정보 없음",
+        tripod: null
+      },
+      {
+        id: 9,
+        name: "어거스트클라이밍",
+        region: "서울",
+        type: "볼더링",
+        address: "서울 강서구 양천로 461 8층",
+        lat: 37.563063,
+        lng: 126.852187,
+        kilterboard: false,
+        moonboard2016: false,
+        moonboard2024: false,
+        shower: false,
+        operating: true,
+        hours: "평일 17:00~23:00 / 주말 11:00~19:00",
+        price: "1일 이용권 20,000원",
+        closedDays: "정보 없음",
+        difficulty: [
+          { name: "쉬움", color: "#22C55E" },
+          { name: "보통", color: "#3B82F6" },
+          { name: "어려움", color: "#EF4444" },
+          { name: "매우 어려움", color: "#292929" }
+        ],
+        groupDiscount: "정보 없음",
+        rentalCost: "정보 없음",
+        tripod: null
+      },
+      {
+        id: 10,
+        name: "그루트 클라이밍",
+        region: "서울",
+        type: "볼더링",
+        address: "서울 성동구 성수일로 19 유한타워 지하2층",
+        lat: 37.542437,
+        lng: 127.048563,
+        kilterboard: true,
+        moonboard2016: false,
+        moonboard2024: false,
+        shower: false,
+        operating: true,
+        hours: "평일 11:00~23:00 / 주말 10:00~20:00",
+        price: "1일 이용권 20,000원",
+        closedDays: "정보 없음",
+        difficulty: [
+          { name: "쉬움", color: "#22C55E" },
+          { name: "보통", color: "#3B82F6" },
+          { name: "어려움", color: "#EF4444" },
+          { name: "매우 어려움", color: "#292929" }
+        ],
+        groupDiscount: "정보 없음",
+        rentalCost: "정보 없음",
+        tripod: null
+      }
     ];
 
-    // 표시할 시설 정보
     const features = [
       { key: "kilterboard", label: "킬터보드" },
       { key: "moonboard2016", label: "문보드 2016" },
@@ -356,38 +370,63 @@
       { key: "operating", label: "현재 운영" }
     ];
 
-    // true인 항목만 태그로 표시
     function createFeatureTags(gym) {
       return features
         .filter(feature => gym[feature.key] === true)
-        .map(feature =>
-          `<span class="facility-tag">${feature.label}</span>`
-        )
+        .map(feature => `<span class="facility-tag">${feature.label}</span>`)
         .join("");
+    }
+
+    // 상세 정보 HTML: 난이도는 세로로 긴 색상 칸으로 표시
+    function createDetailsHTML(gym) {
+      const difficulty = Array.isArray(gym.difficulty) ? gym.difficulty : [];
+      const difficultyHTML = difficulty.length
+        ? `<div class="difficulty-list">
+            ${difficulty.map(level => `
+              <div class="difficulty-level" style="background:${level.color || "#718096"}">
+                ${level.name || "난이도"}
+              </div>
+            `).join("")}
+          </div>`
+        : `<p class="difficulty-empty">난이도 정보 없음</p>`;
+
+      const tripodText = gym.tripod === true
+        ? "있음"
+        : gym.tripod === false
+          ? "없음"
+          : "정보 없음";
+
+      return `
+        <div class="details-content">
+          <p><span class="detail-label">암장 이름:</span> ${gym.name}</p>
+          <p><span class="detail-label">이용시간:</span> ${gym.hours || "정보 없음"}</p>
+          <div class="difficulty-title">난이도</div>
+          ${difficultyHTML}
+          <p><span class="detail-label">단체 할인 혜택:</span> ${gym.groupDiscount || "정보 없음"}</p>
+          <p><span class="detail-label">대관 비용:</span> ${gym.rentalCost || "정보 없음"}</p>
+          <p><span class="detail-label">삼각대 유무:</span> ${tripodText}</p>
+          <p><span class="detail-label">휴무요일:</span> ${gym.closedDays || "정보 없음"}</p>
+        </div>
+      `;
     }
 
     // 3. 필터 패널
     const filterControl = L.control({ position: "topright" });
-
     filterControl.onAdd = function () {
       const div = L.DomUtil.create("div", "gym-filter-panel");
-
       div.innerHTML = `
         <h3>암장 필터</h3>
-        <label><input type="checkbox" id="filter-kilter"> 킬터보드 </label>
-        <label><input type="checkbox" id="filter-moon2016"> 문보드 2016 </label>
-        <label><input type="checkbox" id="filter-moon2024"> 문보드 2024 </label>
-        <label><input type="checkbox" id="filter-shower"> 샤워부스 </label>
+        <label><input type="checkbox" id="filter-kilter"> 킬터보드</label>
+        <label><input type="checkbox" id="filter-moon2016"> 문보드 2016</label>
+        <label><input type="checkbox" id="filter-moon2024"> 문보드 2024</label>
+        <label><input type="checkbox" id="filter-shower"> 샤워부스</label>
         <label><input type="checkbox" id="filter-operating"> 현재 운영 중</label>
         <button type="button" id="reset-gym-filters">필터 초기화</button>
       `;
-
       L.DomEvent.disableClickPropagation(div);
       L.DomEvent.disableScrollPropagation(div);
-
       return div;
     };
-
     filterControl.addTo(map);
 
     // 4. 마커 팝업
@@ -398,29 +437,23 @@
           <p>📍 ${gym.address || gym.region}</p>
           <hr>
           <p><strong>암장 유형:</strong> ${gym.type || "정보 없음"}</p>
-          <div class="facility-tags">
-            ${createFeatureTags(gym)}
-          </div>
+          <div class="facility-tags">${createFeatureTags(gym)}</div>
           <p><strong>이용시간:</strong> ${gym.hours || "정보 없음"}</p>
           <p><strong>이용요금:</strong> ${gym.price || "정보 없음"}</p>
-          ${gym.memo ? `<p><strong>추가 정보:</strong> ${gym.memo}</p>` : ""}
+          <p><strong>휴무요일:</strong> ${gym.closedDays || "정보 없음"}</p>
         </div>
       `;
     }
 
-    // 모든 암장에 마커 생성
-    const markers = gyms.map(gym => {
-      const marker = L.marker([gym.lat, gym.lng])
-        .bindPopup(createGymPopup(gym));
-
-      return { gym, marker };
-    });
+    const markers = gyms.map(gym => ({
+      gym,
+      marker: L.marker([gym.lat, gym.lng]).bindPopup(createGymPopup(gym))
+    }));
 
     // 5. 검색 및 필터
     const search = document.getElementById("search");
     const gymList = document.getElementById("gym-list");
     const count = document.getElementById("count");
-
     const filterIds = [
       "filter-kilter",
       "filter-moon2016",
@@ -431,7 +464,6 @@
 
     function getVisibleGyms() {
       const keyword = search.value.trim().toLowerCase();
-
       const filters = {
         kilterboard: document.getElementById("filter-kilter").checked,
         moonboard2016: document.getElementById("filter-moon2016").checked,
@@ -441,22 +473,14 @@
       };
 
       return gyms.filter(gym => {
-        const searchableText = [
-          gym.name,
-          gym.region,
-          gym.type,
-          gym.address
-        ].join(" ").toLowerCase();
-
+        const searchableText = [gym.name, gym.region, gym.type, gym.address].join(" ").toLowerCase();
         const matchesSearch = searchableText.includes(keyword);
-
         const matchesFilters =
           (!filters.kilterboard || gym.kilterboard === true) &&
           (!filters.moonboard2016 || gym.moonboard2016 === true) &&
           (!filters.moonboard2024 || gym.moonboard2024 === true) &&
           (!filters.shower || gym.shower === true) &&
           (!filters.operating || gym.operating === true);
-
         return matchesSearch && matchesFilters;
       });
     }
@@ -464,7 +488,6 @@
     // 6. 왼쪽 리스트와 지도 마커 갱신
     function renderGyms() {
       const visibleGyms = getVisibleGyms();
-
       gymList.replaceChildren();
       count.textContent = `검색 결과 ${visibleGyms.length}곳`;
 
@@ -485,65 +508,42 @@
         facilityBox.className = "facility-tags";
         facilityBox.innerHTML = createFeatureTags(gym);
 
+        const details = document.createElement("details");
+        details.className = "gym-details";
+        details.innerHTML = `<summary>상세 정보 보기</summary>${createDetailsHTML(gym)}`;
+
         const button = document.createElement("button");
         button.textContent = "지도에서 위치 보기";
-
         button.addEventListener("click", () => {
           map.setView([gym.lat, gym.lng], 15);
-
-          const target = markers.find(
-            item => item.gym.id === gym.id
-          );
-
-          if (target) {
-            target.marker.openPopup();
-          }
+          const target = markers.find(markerItem => markerItem.gym.id === gym.id);
+          if (target) target.marker.openPopup();
         });
 
-        item.append(title, region, type, facilityBox, button);
+        item.append(title, region, type, facilityBox, details, button);
         gymList.appendChild(item);
       });
 
-      // 검색 및 필터 결과에 맞게 마커 표시
       markers.forEach(({ gym, marker }) => {
         if (visibleGyms.includes(gym)) {
-          if (!map.hasLayer(marker)) {
-            marker.addTo(map);
-          }
-        } else {
-          if (map.hasLayer(marker)) {
-            map.removeLayer(marker);
-          }
+          if (!map.hasLayer(marker)) marker.addTo(map);
+        } else if (map.hasLayer(marker)) {
+          map.removeLayer(marker);
         }
       });
     }
 
-    // 검색 이벤트
     search.addEventListener("input", renderGyms);
-
-    // 필터 이벤트
     filterIds.forEach(id => {
-      document.getElementById(id)
-        .addEventListener("change", renderGyms);
+      document.getElementById(id).addEventListener("change", renderGyms);
+    });
+    document.getElementById("reset-gym-filters").addEventListener("click", () => {
+      filterIds.forEach(id => { document.getElementById(id).checked = false; });
+      renderGyms();
     });
 
-    // 필터 초기화
-    document.getElementById("reset-gym-filters")
-      .addEventListener("click", () => {
-        filterIds.forEach(id => {
-          document.getElementById(id).checked = false;
-        });
-
-        renderGyms();
-      });
-
-    // 최초 실행
     renderGyms();
-
-    // 모바일 화면에서도 지도 크기가 맞도록 조정
-    window.addEventListener("resize", () => {
-      map.invalidateSize();
-    });
+    window.addEventListener("resize", () => map.invalidateSize());
   </script>
 </body>
 </html>
