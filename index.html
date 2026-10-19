@@ -57,6 +57,62 @@
     .difficulty-level { display: flex; align-items: center; min-height: 30px; padding: 6px 10px; color: #fff; font-size: 12px; font-weight: 700; text-shadow: 0 1px 2px #0005; }
     .difficulty-empty { color: var(--muted); font-size: 12px; margin: 6px 0; }
 
+
+    /* 회원 기능 */
+    .auth-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .auth-actions button, .reaction-actions button, .modal-card button, .admin-card button { border:0; border-radius:9px; padding:10px 12px; cursor:pointer; font-weight:700; }
+    .auth-primary { background:var(--blue); color:#fff; }
+    .auth-secondary { background:#edf4ff; color:var(--blue); }
+    .auth-status { font-size:12px; color:var(--muted); }
+    .reaction-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; margin-top:10px; }
+    .reaction-actions button { padding:9px 4px; font-size:11px; background:#f1f5f9; color:#334155; white-space:normal; }
+    .reaction-actions button.active { background:#dbeafe; color:#1d4ed8; }
+    .modal-overlay { position:fixed; inset:0; z-index:5000; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(15,23,42,.55); }
+    .modal-overlay.hidden { display:none; }
+    .modal-card { width:min(100%,440px); max-height:90vh; overflow:auto; padding:22px; border-radius:16px; background:#fff; box-shadow:0 20px 60px #0003; }
+    .modal-card h2 { margin:0 0 8px; font-size:20px; }
+    .modal-card p { color:var(--muted); font-size:13px; line-height:1.6; }
+    .modal-card label { display:block; margin:12px 0 5px; font-size:13px; font-weight:700; }
+    .modal-card input { width:100%; padding:12px; border:1px solid #dbe3ee; border-radius:9px; font:inherit; }
+    .modal-buttons { display:flex; gap:8px; margin-top:16px; }
+    .modal-buttons button { flex:1; }
+    .modal-message { margin-top:12px; font-size:13px; line-height:1.5; }
+    .modal-message.error { color:#b91c1c; }
+    .modal-message.success { color:#047857; }
+    .admin-card { width:min(100%,620px); }
+    .pending-user { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 0; border-bottom:1px solid var(--line); }
+    .pending-user small { display:block; margin-top:4px; color:var(--muted); overflow-wrap:anywhere; }
+    .pending-actions { display:flex; gap:6px; }
+    .pending-actions button { padding:8px 10px; }
+    .approve-btn { background:#dcfce7; color:#166534; }
+    .reject-btn { background:#fee2e2; color:#991b1b; }
+    .admin-section { margin-top:22px; padding-top:16px; border-top:1px solid var(--line); }
+    .admin-section h3 { margin:0 0 10px; font-size:16px; }
+    .member-permission-card { border:1px solid var(--line); border-radius:12px; padding:12px; margin:10px 0; }
+    .member-permission-card .member-heading { margin-bottom:8px; overflow-wrap:anywhere; }
+    .permission-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .permission-grid label { display:flex; align-items:center; gap:6px; margin:4px 0; font-weight:400; }
+    .permission-grid input { width:auto; }
+    .member-permission-card .save-permissions { margin-top:10px; width:100%; }
+    .announcement-panel { background:white; border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:18px; }
+    .announcement-panel h2 { font-size:17px; margin:0 0 10px; }
+    .announcement-item { padding:11px 0; border-top:1px solid var(--line); overflow-wrap:anywhere; }
+    .announcement-item h3 { font-size:14px; margin:0 0 6px; }
+    .announcement-item p { white-space:pre-wrap; margin:0 0 6px; font-size:13px; line-height:1.55; }
+    .announcement-item small { color:var(--muted); font-size:11px; }
+    .announcement-compose { display:none; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
+    .announcement-compose.visible { display:block; }
+    .announcement-compose input, .announcement-compose textarea { width:100%; padding:10px; border:1px solid #dbe3ee; border-radius:9px; font:inherit; margin:5px 0 9px; }
+    .announcement-compose textarea { min-height:90px; resize:vertical; }
+    .announcement-compose button { width:100%; }
+    @media (max-width:700px) {
+      header { align-items:flex-start; }
+      .auth-actions { width:100%; }
+      .auth-actions button { flex:1; }
+      .reaction-actions button { font-size:10px; }
+      .pending-user { align-items:flex-start; flex-direction:column; }
+    }
+
     @media (max-width: 700px) {
       header { min-height: auto; padding: 18px; align-items: flex-start; flex-direction: column; }
       header h1 { font-size: 20px; }
@@ -75,15 +131,68 @@
   <header>
     <h1>Go climb</h1>
     <p>내가 가고 싶은 클라이밍 암장을 찾아보세요.</p>
+    <div class="auth-actions">
+      <span id="auth-status" class="auth-status">로그인하지 않았어요</span>
+      <button id="open-auth" class="auth-primary" type="button">로그인 / 가입 신청</button>
+      <button id="open-admin" class="auth-secondary" type="button" hidden>가입 승인 관리</button>
+      <button id="logout-btn" class="auth-secondary" type="button" hidden>로그아웃</button>
+    </div>
   </header>
   <main class="layout">
     <section class="sidebar">
+      <section class="announcement-panel" aria-labelledby="announcement-heading">
+        <h2 id="announcement-heading">📢 GO climb 공지사항</h2>
+        <div id="announcement-list"><p>공지사항을 불러오는 중...</p></div>
+        <form id="announcement-form" class="announcement-compose">
+          <input id="announcement-title" type="text" maxlength="120" placeholder="공지 제목" required>
+          <textarea id="announcement-body" maxlength="5000" placeholder="공지 내용을 입력하세요" required></textarea>
+          <button class="auth-primary" type="submit">공지 올리기</button>
+        </form>
+      </section>
       <input id="search" type="search" placeholder="암장 이름 또는 지역 검색">
       <p id="count"></p>
       <div id="gym-list"></div>
     </section>
     <div id="map"></div>
   </main>
+
+  <div id="auth-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div class="modal-card">
+      <h2 id="auth-title">GO climb 회원</h2>
+      <p>회원가입 신청 후 마스터가 승인하면 좋아요·추천 투표·즐겨찾기를 사용할 수 있어요.</p>
+      <form id="auth-form">
+        <label for="auth-name">닉네임</label>
+        <input id="auth-name" type="text" maxlength="30" autocomplete="nickname" placeholder="닉네임">
+        <label for="auth-email">이메일</label>
+        <input id="auth-email" type="email" autocomplete="email" required placeholder="name@example.com">
+        <label for="auth-password">비밀번호 (6자 이상)</label>
+        <input id="auth-password" type="password" minlength="6" autocomplete="current-password" required placeholder="비밀번호">
+        <div class="modal-buttons">
+          <button class="auth-primary" type="submit" id="login-submit">로그인</button>
+          <button class="auth-secondary" type="button" id="signup-submit">가입 신청</button>
+          <button class="auth-secondary" type="button" id="forgot-password">비밀번호 찾기</button>
+          <button class="auth-secondary" type="button" id="close-auth">닫기</button>
+        </div>
+      </form>
+      <div id="auth-message" class="modal-message" aria-live="polite"></div>
+    </div>
+  </div>
+  <div id="admin-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="admin-title">
+    <div class="modal-card admin-card">
+      <h2 id="admin-title">회원 가입 승인 관리</h2>
+      <p>가입 신청자를 확인하고 승인 또는 거절하세요. 승인 권한은 서버에서 마스터 계정에만 부여됩니다.</p>
+      <div id="pending-list">신청 목록을 불러오는 중...</div>
+      <section class="admin-section">
+        <h3>회원별 기능 권한</h3>
+        <p>회원별로 허용할 기능을 선택하고 저장하세요. 권한은 데이터베이스에서도 확인됩니다.</p>
+        <div id="all-members-list">회원 목록을 불러오는 중...</div>
+      </section>
+      <div class="modal-buttons"><button id="refresh-pending" class="auth-secondary" type="button">새로고침</button><button id="close-admin" class="auth-primary" type="button">닫기</button></div>
+      <div id="admin-message" class="modal-message" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // 1. 지도 생성
@@ -520,7 +629,35 @@
           if (target) target.marker.openPopup();
         });
 
-        item.append(title, region, type, facilityBox, details, button);
+        if (hasPermission("can_edit_gyms")) {
+          const editButton = document.createElement("button");
+          editButton.type = "button"; editButton.textContent = "암장 정보 수정";
+          editButton.addEventListener("click", () => editGymInfo(gym));
+          item.appendChild(editButton);
+        }
+
+        const reactions = document.createElement("div");
+        reactions.className = "reaction-actions";
+        const reactionDefinitions = [
+          { type: "like", permission: "can_like", label: `👍 좋아요 ${reactionCounts[String(gym.id)]?.likes || 0}`, active: myReactions.likes.has(String(gym.id)) },
+          { type: "vote", permission: "can_vote", label: `🗳️ 추천 ${reactionCounts[String(gym.id)]?.votes || 0}`, active: myReactions.votes.has(String(gym.id)) },
+          { type: "favorite", permission: "can_favorite", label: `${myReactions.favorites.has(String(gym.id)) ? "★" : "☆"} 즐겨찾기`, active: myReactions.favorites.has(String(gym.id)) }
+        ];
+        reactionDefinitions.filter(def => hasPermission(def.permission)).forEach(def => {
+          const reactionButton = document.createElement("button");
+          reactionButton.type = "button"; reactionButton.dataset.reaction = def.type;
+          reactionButton.className = def.active ? "active" : ""; reactionButton.textContent = def.label;
+          reactionButton.addEventListener("click", () => toggleReaction(String(gym.id), def.type));
+          reactions.appendChild(reactionButton);
+        });
+        if (!reactions.childElementCount) {
+          const note = document.createElement("small");
+          note.style.color = "var(--muted)";
+          note.textContent = currentUser ? "이용 가능한 기능 권한이 아직 없어요." : "로그인 및 마스터 승인 후 이용할 수 있어요.";
+          reactions.appendChild(note);
+        }
+
+        item.append(title, region, type, facilityBox, details, reactions, button);
         gymList.appendChild(item);
       });
 
@@ -542,8 +679,365 @@
       renderGyms();
     });
 
-    renderGyms();
     window.addEventListener("resize", () => map.invalidateSize());
+
+    // ===== GO climb 회원/좋아요/투표/즐겨찾기 =====
+    // 1) Supabase 프로젝트를 만든 뒤 아래 두 값을 본인 프로젝트 값으로 교체하세요.
+    // 프런트엔드에는 anon/publishable key만 사용하고 service_role key는 절대 넣지 마세요.
+    const SUPABASE_URL = "https://wkaswsmgvlvrimrsjxav.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_bCkm9BjGKV87E_-f0ncGww_Hs_JTPS2";
+    const supabaseReady = SUPABASE_URL.startsWith("https://") &&
+      !SUPABASE_URL.includes("YOUR_PROJECT_ID") &&
+      SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes("YOUR_SUPABASE");
+    const supabaseClient = supabaseReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+    let currentUser = null;
+    let currentProfile = null;
+    let isMaster = false;
+    let memberPermissions = { can_like: false, can_vote: false, can_favorite: false, can_post_notice: false, can_edit_gyms: false };
+    const myReactions = { likes: new Set(), favorites: new Set(), votes: new Set() };
+    let reactionCounts = {};
+
+    const authModal = document.getElementById("auth-modal");
+    const adminModal = document.getElementById("admin-modal");
+    const authMessage = document.getElementById("auth-message");
+    const authStatus = document.getElementById("auth-status");
+    const authForm = document.getElementById("auth-form");
+
+    const permissionDefinitions = [
+      { key: "can_like", label: "좋아요" },
+      { key: "can_vote", label: "추천 투표" },
+      { key: "can_favorite", label: "즐겨찾기" },
+      { key: "can_post_notice", label: "공지 작성" },
+      { key: "can_edit_gyms", label: "암장 정보 수정" }
+    ];
+    function hasPermission(key) {
+      return isMaster || (currentProfile?.status === "approved" && memberPermissions[key] === true);
+    }
+    function setMessage(element, message, type = "") {
+      element.textContent = message;
+      element.className = "modal-message" + (type ? " " + type : "");
+    }
+    function openModal(element) { element.classList.remove("hidden"); }
+    function closeModal(element) { element.classList.add("hidden"); }
+    function setAuthButtons() {
+      document.getElementById("open-auth").hidden = !!currentUser;
+      document.getElementById("logout-btn").hidden = !currentUser;
+      document.getElementById("open-admin").hidden = !isMaster;
+      document.getElementById("announcement-form").classList.toggle("visible", hasPermission("can_post_notice"));
+      if (!currentUser) authStatus.textContent = "로그인하지 않았어요";
+      else if (isMaster) authStatus.textContent = "마스터 계정";
+      else if (currentProfile?.status === "approved") authStatus.textContent = `${currentProfile.display_name || currentUser.email} 회원`;
+      else if (currentProfile?.status === "rejected") authStatus.textContent = "가입 거절됨";
+      else if (currentProfile?.status === "suspended") authStatus.textContent = "계정 이용 정지";
+      else authStatus.textContent = "가입 승인 대기 중";
+    }
+    function clearMyReactions() {
+      myReactions.likes.clear(); myReactions.favorites.clear(); myReactions.votes.clear();
+    }
+    async function loadMyPermissions() {
+      memberPermissions = { can_like: false, can_vote: false, can_favorite: false, can_post_notice: false, can_edit_gyms: false };
+      if (!supabaseClient || !currentUser || isMaster) return;
+      const { data, error } = await supabaseClient.from("member_permissions").select("can_like,can_vote,can_favorite,can_post_notice,can_edit_gyms").eq("user_id", currentUser.id).maybeSingle();
+      if (!error && data) memberPermissions = { ...memberPermissions, ...data };
+    }
+    async function loadGymOverrides() {
+      if (!supabaseClient) return;
+      const { data, error } = await supabaseClient.from("gym_overrides").select("gym_id,name,address,hours,price");
+      if (error) { console.warn("암장 수정 정보를 불러오지 못했습니다:", error.message); return; }
+      (data || []).forEach(row => {
+        const gym = gyms.find(item => String(item.id) === String(row.gym_id));
+        if (!gym) return;
+        ["name", "address", "hours", "price"].forEach(key => { if (row[key] !== null && row[key] !== undefined) gym[key] = row[key]; });
+      });
+      markers.forEach(({ gym, marker }) => marker.setPopupContent(createGymPopup(gym)));
+    }
+    async function editGymInfo(gym) {
+      if (!hasPermission("can_edit_gyms")) { alert("암장 정보 수정 권한이 없어요."); return; }
+      const name = prompt("암장 이름", gym.name); if (name === null) return;
+      const address = prompt("주소", gym.address || ""); if (address === null) return;
+      const hours = prompt("이용시간", gym.hours || ""); if (hours === null) return;
+      const price = prompt("이용요금", gym.price || ""); if (price === null) return;
+      const payload = { gym_id: String(gym.id), name: name.trim(), address: address.trim(), hours: hours.trim(), price: price.trim(), updated_by: currentUser.id };
+      const { error } = await supabaseClient.from("gym_overrides").upsert(payload, { onConflict: "gym_id" });
+      if (error) { alert("암장 정보를 저장하지 못했어요: " + error.message); return; }
+      Object.assign(gym, { name: payload.name, address: payload.address, hours: payload.hours, price: payload.price });
+      markers.forEach(({ gym: markerGym, marker }) => marker.setPopupContent(createGymPopup(markerGym)));
+      renderGyms();
+      alert("암장 정보를 저장했어요.");
+    }
+    async function loadAnnouncements() {
+      const list = document.getElementById("announcement-list");
+      if (!supabaseClient) { list.textContent = "Supabase 설정 후 공지사항을 표시할 수 있어요."; return; }
+      const { data, error } = await supabaseClient.from("announcements").select("id,title,body,created_at,author_id").order("created_at", { ascending: false }).limit(10);
+      if (error) { list.textContent = "공지사항을 불러오지 못했어요. 데이터베이스 설정을 확인해 주세요."; return; }
+      list.replaceChildren();
+      if (!data || !data.length) { list.textContent = "등록된 공지사항이 없어요."; return; }
+      data.forEach(item => {
+        const article = document.createElement("article"); article.className = "announcement-item";
+        const title = document.createElement("h3"); title.textContent = item.title;
+        const body = document.createElement("p"); body.textContent = item.body;
+        const date = document.createElement("small"); date.textContent = item.created_at ? new Date(item.created_at).toLocaleString("ko-KR") : "";
+        article.append(title, body, date);
+        if (isMaster) {
+          const del = document.createElement("button"); del.type = "button"; del.className = "reject-btn"; del.textContent = "공지 삭제";
+          del.addEventListener("click", async () => {
+            if (!confirm("이 공지를 삭제할까요?")) return;
+            const { error: deleteError } = await supabaseClient.from("announcements").delete().eq("id", item.id);
+            if (deleteError) alert("삭제하지 못했어요: " + deleteError.message); else await loadAnnouncements();
+          });
+          article.appendChild(del);
+        }
+        list.appendChild(article);
+      });
+    }
+    async function publishAnnouncement(event) {
+      event.preventDefault();
+      const title = document.getElementById("announcement-title").value.trim();
+      const body = document.getElementById("announcement-body").value.trim();
+      if (!title || !body) return;
+      if (!hasPermission("can_post_notice")) { alert("공지 작성 권한이 없어요."); return; }
+      const { error } = await supabaseClient.from("announcements").insert({ title, body, author_id: currentUser.id });
+      if (error) { alert("공지를 등록하지 못했어요: " + error.message); return; }
+      document.getElementById("announcement-form").reset();
+      await loadAnnouncements();
+      alert("공지를 등록했어요.");
+    }
+    async function loadMyReactions() {
+      clearMyReactions();
+      if (!supabaseClient || !currentUser || (!isMaster && currentProfile?.status !== "approved")) return;
+      const [likes, favorites, votes] = await Promise.all([
+        supabaseClient.from("gym_likes").select("gym_id").eq("user_id", currentUser.id),
+        supabaseClient.from("gym_favorites").select("gym_id").eq("user_id", currentUser.id),
+        supabaseClient.from("gym_votes").select("gym_id").eq("user_id", currentUser.id)
+      ]);
+      (likes.data || []).forEach(row => myReactions.likes.add(String(row.gym_id)));
+      (favorites.data || []).forEach(row => myReactions.favorites.add(String(row.gym_id)));
+      (votes.data || []).forEach(row => myReactions.votes.add(String(row.gym_id)));
+    }
+    async function loadReactionCounts() {
+      if (!supabaseClient) return;
+      const { data, error } = await supabaseClient.rpc("get_gym_reaction_counts");
+      if (error) { console.warn("반응 수를 불러오지 못했습니다:", error.message); return; }
+      reactionCounts = {};
+      (data || []).forEach(row => {
+        reactionCounts[String(row.gym_id)] = {
+          likes: Number(row.likes_count || 0),
+          favorites: Number(row.favorites_count || 0),
+          votes: Number(row.votes_count || 0)
+        };
+      });
+    }
+    async function refreshMemberState() {
+      if (!supabaseClient) {
+        authStatus.textContent = "Supabase 설정 필요";
+        return;
+      }
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      currentUser = user || null;
+      isMaster = !!(currentUser && currentUser.app_metadata && currentUser.app_metadata.role === "master");
+      currentProfile = null;
+      if (currentUser) {
+        const { data, error } = await supabaseClient.from("profiles")
+          .select("id,email,display_name,status,created_at")
+          .eq("id", currentUser.id).maybeSingle();
+        if (!error) currentProfile = data;
+      }
+      await loadMyPermissions();
+      await loadGymOverrides();
+      await loadMyReactions();
+      await loadReactionCounts();
+      setAuthButtons();
+      renderGyms();
+      await loadAnnouncements();
+    }
+    async function signup() {
+      if (!supabaseClient) { setMessage(authMessage, "먼저 HTML 안의 Supabase URL과 anon/publishable key를 설정하세요.", "error"); return; }
+      const email = document.getElementById("auth-email").value.trim();
+      const password = document.getElementById("auth-password").value;
+      const displayName = document.getElementById("auth-name").value.trim();
+      if (password.length < 6) { setMessage(authMessage, "비밀번호는 6자 이상 입력해 주세요.", "error"); return; }
+      const { error } = await supabaseClient.auth.signUp({
+        email, password,
+        options: { data: { display_name: displayName } }
+      });
+      if (error) { setMessage(authMessage, error.message, "error"); return; }
+      setMessage(authMessage, "가입 신청이 접수됐어요. 이메일 확인이 필요할 수 있으며, 마스터 승인 후 기능을 사용할 수 있어요.", "success");
+      await refreshMemberState();
+    }
+    async function requestPasswordReset() {
+      if (!supabaseClient) {
+        setMessage(authMessage, "먼저 Supabase URL과 공개용 API 키를 설정하세요.", "error");
+        return;
+      }
+      const email = document.getElementById("auth-email").value.trim();
+      if (!email) {
+        setMessage(authMessage, "비밀번호를 재설정할 가입 이메일을 먼저 입력해 주세요.", "error");
+        document.getElementById("auth-email").focus();
+        return;
+      }
+      if (window.location.protocol === "file:") {
+        setMessage(authMessage, "비밀번호 재설정은 배포된 웹사이트 주소에서 이용해 주세요. 로컬 파일에서는 이메일 링크가 정상적으로 돌아오지 않을 수 있어요.", "error");
+        return;
+      }
+      const redirectTo = window.location.origin + window.location.pathname;
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) {
+        setMessage(authMessage, "재설정 이메일을 보내지 못했어요: " + error.message, "error");
+        return;
+      }
+      setMessage(authMessage, "해당 이메일 주소가 등록되어 있다면 비밀번호 재설정 링크를 보냈어요. 이메일을 확인해 주세요.", "success");
+    }
+
+    async function login() {
+      if (!supabaseClient) { setMessage(authMessage, "먼저 HTML 안의 Supabase URL과 anon/publishable key를 설정하세요.", "error"); return; }
+      const email = document.getElementById("auth-email").value.trim();
+      const password = document.getElementById("auth-password").value;
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) { setMessage(authMessage, "로그인 실패: 이메일과 비밀번호를 확인해 주세요.", "error"); return; }
+      await refreshMemberState();
+      if (!isMaster && currentProfile?.status !== "approved") {
+        setMessage(authMessage, currentProfile?.status === "rejected" ? "가입 신청이 승인되지 않았어요." : "로그인됐지만 아직 마스터 승인 전이에요. 승인 후 기능을 사용할 수 있어요.", "error");
+      } else {
+        setMessage(authMessage, "로그인됐어요.", "success");
+        setTimeout(() => closeModal(authModal), 500);
+      }
+    }
+    async function logout() {
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      currentUser = null; currentProfile = null; isMaster = false; clearMyReactions();
+      setAuthButtons(); renderGyms();
+    }
+    async function toggleReaction(gymId, type) {
+      if (!supabaseClient) { openModal(authModal); setMessage(authMessage, "회원 기능을 사용하려면 먼저 Supabase 설정을 완료해야 해요.", "error"); return; }
+      if (!currentUser) { openModal(authModal); setMessage(authMessage, "좋아요·추천·즐겨찾기는 로그인 후 이용할 수 있어요.", "error"); return; }
+      if (!isMaster && currentProfile?.status !== "approved") { openModal(authModal); setMessage(authMessage, "마스터가 가입을 승인한 뒤 이용할 수 있어요.", "error"); return; }
+      const requiredPermission = { like: "can_like", vote: "can_vote", favorite: "can_favorite" }[type];
+      if (!requiredPermission || !hasPermission(requiredPermission)) { alert("이 기능은 마스터가 권한을 부여한 회원만 사용할 수 있어요."); return; }
+      const config = {
+        like: { table: "gym_likes", set: myReactions.likes },
+        favorite: { table: "gym_favorites", set: myReactions.favorites },
+        vote: { table: "gym_votes", set: myReactions.votes }
+      }[type];
+      if (!config) return;
+      let result;
+      if (config.set.has(gymId)) {
+        result = await supabaseClient.from(config.table).delete().eq("user_id", currentUser.id).eq("gym_id", gymId);
+      } else {
+        result = await supabaseClient.from(config.table).insert({ user_id: currentUser.id, gym_id: gymId });
+      }
+      if (result.error) { alert("저장하지 못했어요: " + result.error.message); return; }
+      await loadMyReactions(); await loadReactionCounts(); renderGyms();
+    }
+    async function loadPendingMembers() {
+      const list = document.getElementById("pending-list");
+      const message = document.getElementById("admin-message");
+      list.textContent = "불러오는 중...";
+      if (!supabaseClient || !isMaster) { list.textContent = "마스터 계정만 접근할 수 있어요."; return; }
+      const { data, error } = await supabaseClient.from("profiles")
+        .select("id,email,display_name,status,created_at")
+        .eq("status", "pending").order("created_at", { ascending: true });
+      if (error) { list.textContent = "신청 목록을 불러오지 못했습니다."; setMessage(message, error.message, "error"); return; }
+      list.replaceChildren();
+      if (!data || data.length === 0) { list.textContent = "대기 중인 가입 신청이 없어요."; }
+      (data || []).forEach(member => {
+        const row = document.createElement("div"); row.className = "pending-user";
+        const info = document.createElement("div");
+        const name = document.createElement("strong"); name.textContent = member.display_name || "닉네임 없음";
+        const email = document.createElement("small"); email.textContent = member.email || "이메일 없음";
+        const date = document.createElement("small"); date.textContent = member.created_at ? new Date(member.created_at).toLocaleString("ko-KR") : "신청 날짜 없음";
+        info.append(name, email, date);
+        const actions = document.createElement("div"); actions.className = "pending-actions";
+        const approve = document.createElement("button"); approve.className = "approve-btn"; approve.textContent = "승인";
+        approve.addEventListener("click", () => updateMemberStatus(member.id, "approved"));
+        const reject = document.createElement("button"); reject.className = "reject-btn"; reject.textContent = "거절";
+        reject.addEventListener("click", () => updateMemberStatus(member.id, "rejected"));
+        actions.append(approve, reject); row.append(info, actions); list.append(row);
+      });
+      await loadAllMemberPermissions();
+    }
+    async function loadAllMemberPermissions() {
+      const container = document.getElementById("all-members-list");
+      if (!supabaseClient || !isMaster) { container.textContent = "마스터 계정만 접근할 수 있어요."; return; }
+      container.textContent = "회원 목록을 불러오는 중...";
+      const { data: members, error } = await supabaseClient.from("profiles").select("id,email,display_name,status,created_at").order("created_at", { ascending: false });
+      if (error) { container.textContent = "회원 목록을 불러오지 못했어요: " + error.message; return; }
+      const { data: perms, error: permissionError } = await supabaseClient.from("member_permissions").select("user_id,can_like,can_vote,can_favorite,can_post_notice,can_edit_gyms");
+      if (permissionError) { container.textContent = "권한 목록을 불러오지 못했어요. SQL 설정을 실행했는지 확인하세요."; return; }
+      const permissionByUser = Object.fromEntries((perms || []).map(p => [p.user_id, p]));
+      container.replaceChildren();
+      const eligible = (members || []).filter(m => m.status === "approved");
+      if (!eligible.length) { container.textContent = "권한을 부여할 승인된 회원이 없어요."; return; }
+      eligible.forEach(member => {
+        const existing = permissionByUser[member.id] || {};
+        const card = document.createElement("div"); card.className = "member-permission-card";
+        const heading = document.createElement("div"); heading.className = "member-heading";
+        const strong = document.createElement("strong"); strong.textContent = member.display_name || "닉네임 없음";
+        const email = document.createElement("small"); email.style.cssText = "display:block;color:var(--muted);overflow-wrap:anywhere"; email.textContent = member.email || "이메일 없음";
+        heading.append(strong, email); card.appendChild(heading);
+        const grid = document.createElement("div"); grid.className = "permission-grid";
+        permissionDefinitions.forEach(def => {
+          const label = document.createElement("label"); const checkbox = document.createElement("input");
+          checkbox.type = "checkbox"; checkbox.dataset.permission = def.key; checkbox.checked = existing[def.key] === true;
+          const span = document.createElement("span"); span.textContent = def.label; label.append(checkbox, span); grid.appendChild(label);
+        });
+        const save = document.createElement("button"); save.type = "button"; save.className = "auth-primary save-permissions"; save.textContent = "권한 저장";
+        save.addEventListener("click", async () => {
+          if (!isMaster) return;
+          const payload = { user_id: member.id };
+          grid.querySelectorAll("input[data-permission]").forEach(input => { payload[input.dataset.permission] = input.checked; });
+          const { error: saveError } = await supabaseClient.from("member_permissions").upsert(payload, { onConflict: "user_id" });
+          if (saveError) { alert("권한 저장 실패: " + saveError.message); return; }
+          if (currentUser?.id === member.id) await refreshMemberState();
+          alert(`${member.display_name || member.email || "회원"} 권한을 저장했어요.`);
+        });
+        card.append(grid, save); container.appendChild(card);
+      });
+    }
+    async function updateMemberStatus(userId, status) {
+      const message = document.getElementById("admin-message");
+      if (!supabaseClient || !isMaster) return;
+      const { error } = await supabaseClient.from("profiles").update({ status }).eq("id", userId);
+      if (error) { setMessage(message, "변경 실패: " + error.message, "error"); return; }
+      setMessage(message, status === "approved" ? "가입을 승인했어요." : "가입 신청을 거절했어요.", "success");
+      await loadPendingMembers();
+    }
+
+    document.getElementById("open-auth").addEventListener("click", () => { setMessage(authMessage, ""); openModal(authModal); });
+    document.getElementById("close-auth").addEventListener("click", () => closeModal(authModal));
+    document.getElementById("login-submit").addEventListener("click", async event => { event.preventDefault(); await login(); });
+    document.getElementById("signup-submit").addEventListener("click", signup);
+    document.getElementById("forgot-password").addEventListener("click", requestPasswordReset);
+    authForm.addEventListener("submit", async event => { event.preventDefault(); await login(); });
+    document.getElementById("logout-btn").addEventListener("click", logout);
+    document.getElementById("open-admin").addEventListener("click", async () => { openModal(adminModal); await loadPendingMembers(); });
+    document.getElementById("close-admin").addEventListener("click", () => closeModal(adminModal));
+    document.getElementById("refresh-pending").addEventListener("click", loadPendingMembers);
+    document.getElementById("announcement-form").addEventListener("submit", publishAnnouncement);
+    [authModal, adminModal].forEach(modal => modal.addEventListener("click", event => { if (event.target === modal) closeModal(modal); }));
+
+    if (supabaseClient) {
+      supabaseClient.auth.onAuthStateChange((event) => {
+        setTimeout(refreshMemberState, 0);
+        if (event === "PASSWORD_RECOVERY") {
+          const newPassword = prompt("새 비밀번호를 입력하세요. (6자 이상)");
+          if (newPassword === null) return;
+          if (newPassword.length < 6) {
+            alert("비밀번호는 6자 이상이어야 해요. 다시 로그인한 뒤 비밀번호 찾기를 진행해 주세요.");
+            return;
+          }
+          supabaseClient.auth.updateUser({ password: newPassword }).then(({ error }) => {
+            if (error) alert("비밀번호 변경에 실패했어요: " + error.message);
+            else alert("비밀번호가 변경됐어요. 새 비밀번호로 로그인해 주세요.");
+          });
+        }
+      });
+      refreshMemberState();
+    } else {
+      setAuthButtons();
+      authStatus.textContent = "Supabase 설정 필요";
+      renderGyms();
+      loadAnnouncements();
+    }
   </script>
 </body>
 </html>
