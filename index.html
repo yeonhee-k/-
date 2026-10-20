@@ -684,7 +684,7 @@
     // ===== GO climb 회원/좋아요/투표/즐겨찾기 =====
     // 1) Supabase 프로젝트를 만든 뒤 아래 두 값을 본인 프로젝트 값으로 교체하세요.
     // 프런트엔드에는 anon/publishable key만 사용하고 service_role key는 절대 넣지 마세요.
-    const SUPABASE_URL = "https://wkaswsmgvlvrimrsjxav.supabase.co/rest/v1/";
+    const SUPABASE_URL = "https://wkaswsmgvlvrimrsjxav.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_bCkm9BjGKV87E_-f0ncGww_Hs_JTPS2";
     const supabaseReady = SUPABASE_URL.startsWith("https://") &&
       !SUPABASE_URL.includes("YOUR_PROJECT_ID") &&
@@ -856,10 +856,16 @@
       const password = document.getElementById("auth-password").value;
       const displayName = document.getElementById("auth-name").value.trim();
       if (password.length < 6) { setMessage(authMessage, "비밀번호는 6자 이상 입력해 주세요.", "error"); return; }
-      const { error } = await supabaseClient.auth.signUp({
-        email, password,
-        options: { data: { display_name: displayName } }
-      });
+     onst redirectTo = window.location.origin + window.location.pathname;
+
+     const { error } = await supabaseClient.auth.signUp({
+  email,
+  password,
+  options: {
+    data: { display_name: displayName },
+    emailRedirectTo: redirectTo
+  }
+});
       if (error) { setMessage(authMessage, error.message, "error"); return; }
       setMessage(authMessage, "가입 신청이 접수됐어요. 이메일 확인이 필요할 수 있으며, 마스터 승인 후 기능을 사용할 수 있어요.", "success");
       await refreshMemberState();
