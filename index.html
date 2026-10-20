@@ -146,7 +146,9 @@
       header h1 { font-size: 20px; }
       .layout { display: flex; flex-direction: column; height: auto; min-height: 0; }
       #map { order: 1; height: 55vh; min-height: 360px; }
-      .sidebar { order: 2; padding: 16px; overflow: visible; border-right: 0; }
+      .sidebar { order: 2; padding: 24px 16px 16px; overflow: visible; border-right: 0; }
+      #search { display:block; width:100%; margin:0; padding:14px 16px; }
+      #count { margin:12px 2px 12px; }
       .gym-filter-panel { width: 174px; padding: 9px; font-size: 12px; }
       .gym-filter-heading { font-size: 13px; }
       .gym-filter-toggle { flex-basis:30px; width:30px !important; height:29px; }
@@ -270,7 +272,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // 1. 지도 생성
-    const map = L.map("map").setView([36.5, 127.8], 7);
+    const map = L.map("map", { zoomControl: false }).setView([36.5, 127.8], 7);
     L.tileLayer(
       "https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png?key=cb1_4l07_1_83499e6c83816a4c71e568a7",
       {
