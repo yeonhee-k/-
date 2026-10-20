@@ -161,7 +161,7 @@
       <h2 id="auth-title">GO climb 회원</h2>
       <p>회원가입 신청 후 마스터가 승인하면 좋아요·추천 투표·즐겨찾기를 사용할 수 있어요.</p>
       <form id="auth-form">
-        <label for="auth-name">닉네임</label>
+        <label for="auth-name">닉네임 (가입 신청 시)</label>
         <input id="auth-name" type="text" maxlength="30" autocomplete="nickname" placeholder="닉네임">
         <label for="auth-email">이메일</label>
         <input id="auth-email" type="email" autocomplete="email" required placeholder="name@example.com">
@@ -170,7 +170,6 @@
         <div class="modal-buttons">
           <button class="auth-primary" type="submit" id="login-submit">로그인</button>
           <button class="auth-secondary" type="button" id="signup-submit">가입 신청</button>
-          <button class="auth-secondary" type="button" id="forgot-password">비밀번호 찾기</button>
           <button class="auth-secondary" type="button" id="close-auth">닫기</button>
         </div>
       </form>
@@ -856,44 +855,19 @@
       const password = document.getElementById("auth-password").value;
       const displayName = document.getElementById("auth-name").value.trim();
       if (password.length < 6) { setMessage(authMessage, "비밀번호는 6자 이상 입력해 주세요.", "error"); return; }
-     onst redirectTo = window.location.origin + window.location.pathname;
-
-     const { error } = await supabaseClient.auth.signUp({
-  email,
-  password,
-  options: {
-    data: { display_name: displayName },
-    emailRedirectTo: redirectTo
-  }
-});
+      const redirectTo = window.location.origin + window.location.pathname;
+      const { error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { display_name: displayName },
+          emailRedirectTo: redirectTo
+        }
+      });
       if (error) { setMessage(authMessage, error.message, "error"); return; }
       setMessage(authMessage, "가입 신청이 접수됐어요. 이메일 확인이 필요할 수 있으며, 마스터 승인 후 기능을 사용할 수 있어요.", "success");
       await refreshMemberState();
     }
-    async function requestPasswordReset() {
-      if (!supabaseClient) {
-        setMessage(authMessage, "먼저 Supabase URL과 공개용 API 키를 설정하세요.", "error");
-        return;
-      }
-      const email = document.getElementById("auth-email").value.trim();
-      if (!email) {
-        setMessage(authMessage, "비밀번호를 재설정할 가입 이메일을 먼저 입력해 주세요.", "error");
-        document.getElementById("auth-email").focus();
-        return;
-      }
-      if (window.location.protocol === "file:") {
-        setMessage(authMessage, "비밀번호 재설정은 배포된 웹사이트 주소에서 이용해 주세요. 로컬 파일에서는 이메일 링크가 정상적으로 돌아오지 않을 수 있어요.", "error");
-        return;
-      }
-      const redirectTo = window.location.origin + window.location.pathname;
-      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
-      if (error) {
-        setMessage(authMessage, "재설정 이메일을 보내지 못했어요: " + error.message, "error");
-        return;
-      }
-      setMessage(authMessage, "해당 이메일 주소가 등록되어 있다면 비밀번호 재설정 링크를 보냈어요. 이메일을 확인해 주세요.", "success");
-    }
-
     async function login() {
       if (!supabaseClient) { setMessage(authMessage, "먼저 HTML 안의 Supabase URL과 anon/publishable key를 설정하세요.", "error"); return; }
       const email = document.getElementById("auth-email").value.trim();
@@ -1012,7 +986,6 @@
     document.getElementById("close-auth").addEventListener("click", () => closeModal(authModal));
     document.getElementById("login-submit").addEventListener("click", async event => { event.preventDefault(); await login(); });
     document.getElementById("signup-submit").addEventListener("click", signup);
-    document.getElementById("forgot-password").addEventListener("click", requestPasswordReset);
     authForm.addEventListener("submit", async event => { event.preventDefault(); await login(); });
     document.getElementById("logout-btn").addEventListener("click", logout);
     document.getElementById("open-admin").addEventListener("click", async () => { openModal(adminModal); await loadPendingMembers(); });
@@ -1022,21 +995,7 @@
     [authModal, adminModal].forEach(modal => modal.addEventListener("click", event => { if (event.target === modal) closeModal(modal); }));
 
     if (supabaseClient) {
-      supabaseClient.auth.onAuthStateChange((event) => {
-        setTimeout(refreshMemberState, 0);
-        if (event === "PASSWORD_RECOVERY") {
-          const newPassword = prompt("새 비밀번호를 입력하세요. (6자 이상)");
-          if (newPassword === null) return;
-          if (newPassword.length < 6) {
-            alert("비밀번호는 6자 이상이어야 해요. 다시 로그인한 뒤 비밀번호 찾기를 진행해 주세요.");
-            return;
-          }
-          supabaseClient.auth.updateUser({ password: newPassword }).then(({ error }) => {
-            if (error) alert("비밀번호 변경에 실패했어요: " + error.message);
-            else alert("비밀번호가 변경됐어요. 새 비밀번호로 로그인해 주세요.");
-          });
-        }
-      });
+      supabaseClient.auth.onAuthStateChange(() => { setTimeout(refreshMemberState, 0); });
       refreshMemberState();
     } else {
       setAuthButtons();
