@@ -764,9 +764,27 @@
         const button = document.createElement("button");
         button.textContent = "지도에서 위치 보기";
         button.addEventListener("click", () => {
-          map.setView([gym.lat, gym.lng], 15);
-          const target = markers.find(markerItem => markerItem.gym.id === gym.id);
-          if (target) target.marker.openPopup();
+          const target = markers.find(markerItem => String(markerItem.gym.id) === String(gym.id));
+          const mapElement = document.getElementById("map");
+          const isMobile = window.matchMedia("(max-width: 700px)").matches;
+
+          // 모바일에서는 지도 영역을 화면 맨 위쪽으로 가져와 지도 중심으로 보여 줍니다.
+          if (isMobile) {
+            const top = mapElement.getBoundingClientRect().top + window.scrollY;
+            window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+          }
+
+          // 지도 크기 재계산 후 암장 마커와 정보 팝업을 중앙에 배치합니다.
+          window.setTimeout(() => {
+            map.invalidateSize({ pan: false });
+            map.setView([Number(gym.lat), Number(gym.lng)], 15, { animate: true });
+            if (target) {
+              target.marker.openPopup();
+              window.setTimeout(() => {
+                map.panTo([Number(gym.lat), Number(gym.lng)], { animate: true });
+              }, 120);
+            }
+          }, isMobile ? 250 : 0);
         });
 
         item.append(headingRow, region, type, facilityBox, details, button);
