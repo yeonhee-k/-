@@ -650,11 +650,11 @@
           <p><span class="detail-label">이용시간:</span> ${gym.hours || "정보 없음"}</p>
           <div class="difficulty-title">난이도</div>
           ${difficultyHTML}
-          <p><span class="detail-label">단체 할인 혜택:</span> ${gym.groupDiscount || "정보 없음"}</p>
+          <p><span class="detail-label">단체 할인</span> ${gym.groupDiscount || "정보 없음"}</p>
           <p><span class="detail-label">대관 비용:</span> ${gym.rentalCost || "정보 없음"}</p>
-          <p><span class="detail-label">삼각대 유무:</span> ${tripodText}</p>
+          <p><span class="detail-label">삼각대:</span> ${tripodText}</p>
           <p><span class="detail-label">휴무요일:</span> ${gym.closedDays || "정보 없음"}</p>
-          <p><span class="detail-label">자판기 유무:</span> ${gym.vendingMachine || "정보 없음"}</p>
+          <p><span class="detail-label">자판기:</span> ${gym.vendingMachine || "정보 없음"}</p>
         </div>
       `;
     }
@@ -814,30 +814,22 @@
           const mapElement = document.getElementById("map");
           const isMobile = window.matchMedia("(max-width: 700px)").matches;
 
-          // 모바일에서는 지도 영역을 화면 맨 위쪽으로 가져와 지도 중심으로 보여 줍니다.
+          // 모바일에서는 하단 목록을 접고 지도를 화면 위쪽에 표시합니다.
           if (isMobile) {
             gymSidebar.classList.remove("expanded");
             window.scrollTo({ top: 0, behavior: "smooth" });
           }
 
-          // 지도 크기 재계산 후 마커를 지도 화면의 정중앙에 배치합니다.
-          // 데스크톱에서는 별도의 panBy 오프셋을 적용하지 않습니다.
+          // 레이아웃이 바뀐 뒤 지도 크기를 다시 계산하고, 실제 마커 좌표를
+          // 지도 컨테이너의 정중앙에 놓습니다. 별도 panBy 보정은 하지 않습니다.
           window.setTimeout(() => {
             map.invalidateSize({ pan: false });
             const position = target
               ? target.marker.getLatLng()
-              : [Number(gym.lat), Number(gym.lng)];
+              : L.latLng(Number(gym.lat), Number(gym.lng));
             map.setView(position, 15, { animate: false });
-            if (target) {
-              target.marker.openPopup();
-              // 모바일에서만 하단 패널을 고려해 약간 위쪽으로 보정합니다.
-              if (isMobile) {
-                window.setTimeout(() => {
-                  map.panBy([0, -85], { animate: true, duration: 0.25 });
-                }, 100);
-              }
-            }
-          }, isMobile ? 250 : 80);
+            if (target) target.marker.openPopup();
+          }, isMobile ? 350 : 120);
         });
 
         item.append(headingRow, region, type, facilityBox, details, button);
