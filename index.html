@@ -211,6 +211,15 @@
     .pass-progress span { display:block; height:100%; background:#16a34a; }
     .calendar-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
     .calendar-toolbar h3 { margin:0; font-size:20px; }
+    .calendar-month-picker-trigger { border:0; background:transparent; color:var(--navy); font:inherit; font-weight:800; padding:8px 10px; border-radius:10px; cursor:pointer; }
+    .calendar-month-picker-trigger:active { background:#edf2f8; }
+    .calendar-picker-backdrop { display:none; position:fixed; inset:0; z-index:5010; background:#0f172a66; align-items:center; justify-content:center; padding:20px; }
+    .calendar-picker-backdrop.open { display:flex; }
+    .calendar-picker-dialog { width:min(100%,360px); background:#fff; border-radius:18px; padding:22px; box-shadow:0 20px 60px #172b4d35; }
+    .calendar-picker-dialog h3 { margin:0 0 18px; }
+    .calendar-picker-fields { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .calendar-picker-fields label { display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:700; }
+    .calendar-picker-fields select { width:100%; padding:12px; border:1px solid #dce4ef; border-radius:10px; background:#fff; color:var(--navy); font:inherit; }
     .calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); grid-template-rows:auto repeat(6,minmax(0,1fr)); gap:5px; flex:1; min-height:0; }
     .calendar-weekday { text-align:center; color:var(--muted); font-size:12px; font-weight:700; padding:8px 0; }
     .calendar-day { min-height:0; height:100%; border:1px solid var(--line); border-radius:10px; background:#fff; text-align:left; padding:8px; color:var(--navy); cursor:pointer; overflow:hidden; }
@@ -289,8 +298,18 @@
     <div class="feature-topbar"><h2>📅 클라이밍 달력</h2><button class="feature-secondary" type="button" data-close-feature>지도 화면으로</button></div>
     <div class="feature-content">
       <div class="feature-card calendar-month-card">
-        <div class="calendar-toolbar"><button id="calendar-prev" class="feature-secondary" type="button" aria-label="이전 달">‹</button><h3 id="calendar-month-title"></h3><button id="calendar-next" class="feature-secondary" type="button" aria-label="다음 달">›</button></div>
+        <div class="calendar-toolbar"><button id="calendar-prev" class="feature-secondary" type="button" aria-label="이전 달">‹</button><button id="calendar-month-title" class="calendar-month-picker-trigger" type="button" aria-haspopup="dialog" aria-label="년도와 월 선택"></button><button id="calendar-next" class="feature-secondary" type="button" aria-label="다음 달">›</button></div>
         <div id="calendar-grid" class="calendar-grid"></div>
+      </div>
+      <div id="calendar-picker-backdrop" class="calendar-picker-backdrop" aria-hidden="true">
+        <div class="calendar-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="calendar-picker-heading">
+          <h3 id="calendar-picker-heading">이동할 날짜 선택</h3>
+          <div class="calendar-picker-fields">
+            <label>년도<select id="calendar-year-select"></select></label>
+            <label>월<select id="calendar-month-select"></select></label>
+          </div>
+          <div class="feature-actions"><button id="calendar-picker-apply" class="feature-primary" type="button">이동</button><button id="calendar-picker-cancel" class="feature-secondary" type="button">취소</button></div>
+        </div>
       </div>
       <div id="calendar-backdrop" class="calendar-backdrop"></div>
       <form id="visit-form" class="feature-card calendar-editor">
@@ -1470,13 +1489,32 @@
     passForm.addEventListener('submit',async e=>{e.preventDefault();const passes=readData('passes');const type=passType.value;const existing=passes.find(p=>p.id===editingPassId);const isCount=type==='5'||type==='10';const total=isCount?Number(type):0;const item={id:editingPassId||`${Date.now()}_${Math.random().toString(36).slice(2,8)}`,gym:passGym.value,type,start:passStart.value,validity:isCount?passValidity.value:null,total,remaining:existing&&existing.type===type?Math.min(Number(existing.remaining),total):total}; if(!item.gym||!item.start){alert('암장과 등록일을 선택해 주세요.');return;} if(existing){const linked=readData('visits').some(v=>v.passId===existing.id);if(linked&&(existing.gym!==item.gym||existing.type!==item.type||existing.start!==item.start)){alert('방문 기록에 연결된 이용권은 암장·종류·등록일을 바꾸기 전에 방문 기록을 먼저 수정해 주세요.');return;} } const index=passes.findIndex(p=>p.id===item.id);if(index>=0)passes[index]=item;else passes.push(item);saveData('passes',passes);resetPassForm();renderPasses();alert(`이용권을 저장했어요. 만료일은 ${passExpiry(item)}입니다.`);});
     passType.addEventListener('change',updatePassValidityVisibility);document.getElementById('pass-cancel-edit').addEventListener('click',resetPassForm);
     function renderCalendar() {
-      const title=document.getElementById('calendar-month-title');title.textContent=`${calendarMonth.getFullYear()}년 ${calendarMonth.getMonth()+1}월`;const grid=document.getElementById('calendar-grid');grid.innerHTML='';['일','월','화','수','목','금','토'].forEach(d=>{const el=document.createElement('div');el.className='calendar-weekday';el.textContent=d;grid.append(el);});
+      const title=document.getElementById('calendar-month-title');title.textContent=`${calendarMonth.getFullYear()}년 ${calendarMonth.getMonth()+1}월 ▾`;const grid=document.getElementById('calendar-grid');grid.innerHTML='';['일','월','화','수','목','금','토'].forEach(d=>{const el=document.createElement('div');el.className='calendar-weekday';el.textContent=d;grid.append(el);});
       const first=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1);const offset=first.getDay();const days=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,0).getDate();const visits=readData('visits');const today=localDateString(new Date());
       for(let i=0;i<offset;i++){const blank=document.createElement('button');blank.type='button';blank.className='calendar-day';blank.disabled=true;grid.append(blank);}for(let day=1;day<=days;day++){const date=localDateString(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),day));const btn=document.createElement('button');btn.type='button';btn.className='calendar-day'+(date===today?' today':'')+(date===selectedCalendarDate?' selected':'');btn.setAttribute('aria-label',date);const num=document.createElement('span');num.className='day-number';num.textContent=day;btn.append(num);visits.filter(v=>v.date===date).forEach(v=>{const tag=document.createElement('span');tag.className='calendar-visit';tag.textContent=v.gym;btn.append(tag);});btn.addEventListener('click',()=>{openVisitEditor(date);});grid.append(btn);}
       fillGymSelect(visitGym,visitGym.value);setVisitDate(selectedCalendarDate);
     }
     function setVisitDate(date) { visitDate.value=date;editingVisitDate=date;const visit=readData('visits').find(v=>v.date===date);document.getElementById('visit-form-title').textContent=visit?`${date} 방문 기록 수정`:`${date} 방문 기록 등록`;document.getElementById('visit-delete').hidden=!visit;document.getElementById('visit-message').textContent=visit?(visit.passId?'횟수권 1회가 차감된 기록입니다.':'방문 기록이 있습니다.'):'선택한 날짜에 방문한 암장을 등록하세요.';if(visit)visitGym.value=visit.gym; }
-    document.getElementById('calendar-prev').addEventListener('click',()=>{calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1);renderCalendar();});document.getElementById('calendar-next').addEventListener('click',()=>{calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1);renderCalendar();});
+    function shiftCalendarMonth(amount) { calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+amount,1);renderCalendar(); }
+    document.getElementById('calendar-prev').addEventListener('click',()=>shiftCalendarMonth(-1));document.getElementById('calendar-next').addEventListener('click',()=>shiftCalendarMonth(1));
+    const calendarPickerBackdrop=document.getElementById('calendar-picker-backdrop');
+    function openCalendarPicker() {
+      const yearSelect=document.getElementById('calendar-year-select'), monthSelect=document.getElementById('calendar-month-select');
+      const currentYear=calendarMonth.getFullYear(); yearSelect.innerHTML='';
+      for(let y=currentYear-15;y<=currentYear+15;y++){const option=document.createElement('option');option.value=String(y);option.textContent=`${y}년`;yearSelect.append(option);}
+      monthSelect.innerHTML='';for(let m=1;m<=12;m++){const option=document.createElement('option');option.value=String(m-1);option.textContent=`${m}월`;monthSelect.append(option);}
+      yearSelect.value=String(currentYear);monthSelect.value=String(calendarMonth.getMonth());calendarPickerBackdrop.classList.add('open');calendarPickerBackdrop.setAttribute('aria-hidden','false');
+    }
+    function closeCalendarPicker(){calendarPickerBackdrop.classList.remove('open');calendarPickerBackdrop.setAttribute('aria-hidden','true');}
+    document.getElementById('calendar-month-title').addEventListener('click',openCalendarPicker);
+    document.getElementById('calendar-picker-apply').addEventListener('click',()=>{calendarMonth=new Date(Number(document.getElementById('calendar-year-select').value),Number(document.getElementById('calendar-month-select').value),1);closeCalendarPicker();renderCalendar();});
+    document.getElementById('calendar-picker-cancel').addEventListener('click',closeCalendarPicker);
+    calendarPickerBackdrop.addEventListener('click',e=>{if(e.target===calendarPickerBackdrop)closeCalendarPicker();});
+    let calendarTouchStart=null, suppressCalendarClick=false;
+    const calendarGrid=document.getElementById('calendar-grid');
+    calendarGrid.addEventListener('touchstart',e=>{const t=e.touches[0];calendarTouchStart={x:t.clientX,y:t.clientY};},{passive:true});
+    calendarGrid.addEventListener('touchend',e=>{if(!calendarTouchStart)return;const t=e.changedTouches[0],dx=t.clientX-calendarTouchStart.x,dy=t.clientY-calendarTouchStart.y;calendarTouchStart=null;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.25){suppressCalendarClick=true;shiftCalendarMonth(dx<0?1:-1);}}, {passive:true});
+    calendarGrid.addEventListener('click',e=>{if(suppressCalendarClick){e.preventDefault();e.stopPropagation();suppressCalendarClick=false;}},true);
     document.getElementById('close-visit-editor').addEventListener('click',closeVisitEditor);document.getElementById('calendar-backdrop').addEventListener('click',closeVisitEditor);
     visitDate.addEventListener('change',()=>{selectedCalendarDate=visitDate.value;const d=parseLocalDate(selectedCalendarDate);calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();});
     function restoreVisitPass(visit) { if(!visit?.passId)return;const passes=readData('passes');const p=passes.find(x=>x.id===visit.passId);if(p&&(p.type==='5'||p.type==='10'))p.remaining=Math.min(Number(p.total),Number(p.remaining)+1);saveData('passes',passes); }
