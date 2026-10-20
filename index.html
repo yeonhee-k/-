@@ -826,9 +826,10 @@
             map.setView([Number(gym.lat), Number(gym.lng)], 15, { animate: true });
             if (target) {
               target.marker.openPopup();
+              // 필터 패널에 가리지 않도록 마커와 팝업을 화면에서 조금 아래로 이동합니다.
               window.setTimeout(() => {
-                map.panTo([Number(gym.lat), Number(gym.lng)], { animate: true });
-              }, 120);
+                map.panBy([0, isMobile ? -85 : -35], { animate: true, duration: 0.25 });
+              }, 180);
             }
           }, isMobile ? 250 : 0);
         });
