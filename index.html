@@ -195,7 +195,6 @@
         <div id="menu-user" class="menu-user">로그인하지 않았어요</div>
         <button class="menu-item" id="menu-announcements" type="button"><span>📢</span> 공지사항</button>
         <button class="menu-item" id="menu-favorites" type="button"><span>☆</span> 즐겨찾기</button>
-        <button class="menu-item" id="menu-votes" type="button"><span>🗳️</span> 투표</button>
         <hr class="menu-divider">
         <div class="auth-actions">
           <button id="open-auth" class="auth-primary" type="button">로그인 / 가입 신청</button>
@@ -235,28 +234,6 @@
       <p id="saved-list-description">내가 저장한 암장 목록</p>
       <div id="saved-list-content"></div>
       <div class="modal-buttons"><button id="close-saved-list" class="auth-primary" type="button">닫기</button></div>
-    </div>
-  </div>
-  <div id="poll-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="poll-modal-title">
-    <div class="modal-card poll-modal-card">
-      <h2 id="poll-modal-title">🗳️ 회원 투표</h2>
-      <p>투표 종료 시간에 도달하거나 승인된 모든 회원이 투표하면 자동으로 종료돼요.</p>
-      <form id="poll-compose" class="poll-compose" hidden>
-        <label for="poll-title-input">투표 제목</label>
-        <input id="poll-title-input" maxlength="180" required placeholder="예: 다음 정모 날짜는 언제가 좋을까요?">
-        <label>투표 항목</label>
-        <div id="poll-options-inputs">
-          <div class="poll-option-input"><input maxlength="300" required placeholder="투표 항목 1"><button type="button" class="auth-secondary poll-remove-option" aria-label="항목 삭제" hidden>−</button></div>
-          <div class="poll-option-input"><input maxlength="300" required placeholder="투표 항목 2"><button type="button" class="auth-secondary poll-remove-option" aria-label="항목 삭제" hidden>−</button></div>
-        </div>
-        <button id="poll-add-option" class="auth-secondary" type="button">＋ 투표 항목 추가</button>
-        <label for="poll-close-time" style="display:block;margin-top:12px">투표 종료 시간</label>
-        <input id="poll-close-time" type="datetime-local" required>
-        <button class="auth-primary" type="submit">투표 등록</button>
-        <div id="poll-compose-message" class="poll-message" aria-live="polite"></div>
-      </form>
-      <div id="poll-list">투표 목록을 불러오는 중...</div>
-      <div class="modal-buttons"><button id="refresh-polls" class="auth-secondary" type="button">새로고침</button><button id="close-polls" class="auth-primary" type="button">닫기</button></div>
     </div>
   </div>
   <div id="auth-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="auth-title">
@@ -624,7 +601,6 @@
 
       return `
         <div class="details-content">
-          <p><span class="detail-label">암장 이름:</span> ${gym.name}</p>
           <p><span class="detail-label">이용시간:</span> ${gym.hours || "정보 없음"}</p>
           <div class="difficulty-title">난이도</div>
           ${difficultyHTML}
@@ -632,6 +608,7 @@
           <p><span class="detail-label">대관 비용:</span> ${gym.rentalCost || "정보 없음"}</p>
           <p><span class="detail-label">삼각대 유무:</span> ${tripodText}</p>
           <p><span class="detail-label">휴무요일:</span> ${gym.closedDays || "정보 없음"}</p>
+          <p><span class="detail-label">자판기 유무:</span> ${gym.vendingMachine || "정보 없음"}</p>
         </div>
       `;
     }
@@ -829,7 +806,7 @@
     let currentProfile = null;
     let isMaster = false;
     let memberPermissions = { can_like: false, can_vote: false, can_favorite: false, can_post_notice: false };
-    const myReactions = { likes: new Set(), favorites: new Set(), votes: new Set() };
+    const myReactions = { likes: new Set(), favorites: new Set() };
     let reactionCounts = {};
 
     const authModal = document.getElementById("auth-modal");
@@ -878,10 +855,8 @@
     }
     function showSavedGyms(type) {
       closeAccountMenu();
-      const isVote = type === "votes";
-      const title = isVote ? "내 투표" : "내 즐겨찾기";
-      document.getElementById("saved-list-title").textContent = title;
-      document.getElementById("saved-list-description").textContent = isVote ? "내가 추천 투표한 암장 목록" : "내가 즐겨찾기에 저장한 암장 목록";
+      document.getElementById("saved-list-title").textContent = "즐겨찾기";
+      document.getElementById("saved-list-description").textContent = "내가 즐겨찾기에 저장한 암장 목록";
       const container = document.getElementById("saved-list-content");
       container.replaceChildren();
       if (!currentUser) {
@@ -889,13 +864,13 @@
       } else if (!isMaster && currentProfile?.status !== "approved") {
         container.textContent = "마스터의 가입 승인 후 이용할 수 있어요.";
       } else {
-        const ids = isVote ? myReactions.votes : myReactions.favorites;
-        const permission = isVote ? "can_vote" : "can_favorite";
+        const ids = myReactions.favorites;
+        const permission = "can_favorite";
         if (!hasPermission(permission)) {
           container.textContent = "이 기능은 마스터가 권한을 부여한 회원만 사용할 수 있어요.";
         } else {
           const saved = gyms.filter(gym => ids.has(String(gym.id)));
-          if (!saved.length) container.textContent = isVote ? "아직 투표한 암장이 없어요." : "즐겨찾기한 암장이 없어요.";
+          if (!saved.length) container.textContent = "즐겨찾기한 암장이 없어요.";
           saved.forEach(gym => {
             const row = document.createElement("div"); row.className = "saved-gym-row";
             const name = document.createElement("strong"); name.textContent = gym.name;
@@ -912,68 +887,6 @@
       }
       openModal(savedListModal);
     }
-    const pollModal = document.getElementById("poll-modal");
-    const pollCompose = document.getElementById("poll-compose");
-    const pollList = document.getElementById("poll-list");
-    function canManagePolls() { return isMaster || (currentProfile?.status === "approved" && memberPermissions.can_post_notice === true); }
-    function canVoteInPolls() { return isMaster || currentProfile?.status === "approved"; }
-    function pollMessage(message, isError=true) {
-      const el=document.getElementById("poll-compose-message"); el.textContent=message; el.style.color=isError?"#b91c1c":"#047857";
-    }
-    function openPolls() {
-      closeAccountMenu();
-      if (!currentUser) { openModal(authModal); showAuthView("login"); setMessage(authMessage,"투표를 보려면 먼저 로그인해 주세요.","error"); return; }
-      openModal(pollModal); pollCompose.hidden=!canManagePolls(); loadPolls();
-    }
-    function updatePollOptionControls() {
-      const rows=[...document.querySelectorAll("#poll-options-inputs .poll-option-input")];
-      rows.forEach((row,i)=>{ row.querySelector("input").placeholder=`투표 항목 ${i+1}`; row.querySelector(".poll-remove-option").hidden=rows.length<=2; });
-    }
-    async function loadPolls() {
-      if (!supabaseClient) { pollList.textContent="Supabase 설정을 확인해 주세요."; return; }
-      pollList.textContent="투표 목록을 불러오는 중...";
-      const {data:polls,error}=await supabaseClient.from("polls").select("id,title,created_at,closes_at,closed,created_by").order("created_at",{ascending:false});
-      if(error){pollList.textContent="투표 기능 데이터베이스 설정이 필요해요. 제공된 SQL 설정 파일을 Supabase SQL Editor에서 실행해 주세요. ("+error.message+")";return;}
-      pollList.replaceChildren();
-      if(!polls?.length){pollList.textContent="등록된 투표가 없어요.";return;}
-      const now=Date.now();
-      for(const poll of polls){
-        const {data:opts, error:oe}=await supabaseClient.from("poll_options").select("id,label").eq("poll_id",poll.id).order("sort_order");
-        if(oe) continue;
-        const {data:votes}=await supabaseClient.from("poll_votes").select("option_id,user_id").eq("poll_id",poll.id);
-        const voteRows=votes||[]; const myVote=voteRows.find(v=>v.user_id===currentUser.id);
-        const ended=!!poll.closed || new Date(poll.closes_at).getTime()<=now;
-        const card=document.createElement("article");card.className="poll-item";
-        const title=document.createElement("h3");title.textContent=poll.title;
-        const meta=document.createElement("div");meta.className="poll-meta";meta.textContent=(ended?"투표 종료":"진행 중")+" · 종료 예정: "+new Date(poll.closes_at).toLocaleString("ko-KR")+" · 참여 "+new Set(voteRows.map(v=>v.user_id)).size+"명";
-        card.append(title,meta);
-        if(ended){
-          for(const opt of opts){const count=voteRows.filter(v=>v.option_id===opt.id).length;const pct=voteRows.length?Math.round(count/voteRows.length*100):0;const row=document.createElement("div");row.className="poll-result-row";const label=document.createElement("div");label.className="poll-result-label";const name=document.createElement("span");name.textContent=opt.label;const value=document.createElement("strong");value.textContent=`${count}표 (${pct}%)`;label.append(name,value);const bar=document.createElement("div");bar.className="poll-result-bar";const fill=document.createElement("span");fill.style.width=pct+"%";bar.append(fill);row.append(label,bar);card.append(row);}
-          const total=document.createElement("small");total.textContent=`총 ${voteRows.length}표`;card.append(total);
-        } else if(myVote){const note=document.createElement("p");note.textContent="투표 완료했어요. 결과는 투표 종료 후 공개돼요.";card.append(note);}
-        else if(canVoteInPolls()){
-          const form=document.createElement("form");opts.forEach((opt,i)=>{const label=document.createElement("label");label.className="poll-choice";const input=document.createElement("input");input.type="radio";input.name="poll-choice-"+poll.id;input.value=opt.id;input.required=true;const text=document.createElement("span");text.textContent=opt.label;label.append(input,text);form.append(label);});const btn=document.createElement("button");btn.type="submit";btn.className="auth-primary";btn.textContent="투표하기";form.append(btn);form.addEventListener("submit",async ev=>{ev.preventDefault();btn.disabled=true;const selected=form.querySelector("input:checked")?.value;const {error:voteError}=await supabaseClient.rpc("cast_go_climb_vote",{target_poll_id:poll.id,target_option_id:selected});if(voteError){alert("투표하지 못했어요: "+voteError.message);btn.disabled=false;}else await loadPolls();});card.append(form);
-        } else {const note=document.createElement("p");note.textContent="투표 권한이 없어요. 마스터에게 권한을 요청해 주세요.";card.append(note);}
-        pollList.append(card);
-      }
-    }
-    async function createPoll(event){
-      event.preventDefault(); if(!canManagePolls()){pollMessage("투표 작성 권한이 없어요.");return;}
-      const title=document.getElementById("poll-title-input").value.trim();
-      const options=[...document.querySelectorAll("#poll-options-inputs input")].map(x=>x.value.trim()).filter(Boolean);
-      const localValue=document.getElementById("poll-close-time").value; const closeDate=new Date(localValue);
-      if(!title||options.length<2||options.some(x=>!x)||!localValue||Number.isNaN(closeDate.getTime())||closeDate.getTime()<=Date.now()){pollMessage("제목, 항목 2개 이상과 미래의 종료 시간을 입력해 주세요.");return;}
-      const {data,error}=await supabaseClient.rpc("create_go_climb_poll",{poll_title:title,poll_options:options,poll_closes_at:closeDate.toISOString()});
-      if(error){pollMessage("등록 실패: "+error.message);return;}
-      pollCompose.reset();document.getElementById("poll-options-inputs").innerHTML='<div class="poll-option-input"><input maxlength="300" required placeholder="투표 항목 1"><button type="button" class="auth-secondary poll-remove-option" aria-label="항목 삭제" hidden>−</button></div><div class="poll-option-input"><input maxlength="300" required placeholder="투표 항목 2"><button type="button" class="auth-secondary poll-remove-option" aria-label="항목 삭제" hidden>−</button></div>';updatePollOptionControls();pollMessage("투표를 등록했어요.",false);await loadPolls();
-    }
-    document.getElementById("poll-add-option").addEventListener("click",()=>{const row=document.createElement("div");row.className="poll-option-input";const input=document.createElement("input");input.maxLength=300;input.required=true;const remove=document.createElement("button");remove.type="button";remove.className="auth-secondary poll-remove-option";remove.textContent="−";remove.setAttribute("aria-label","항목 삭제");remove.addEventListener("click",()=>{row.remove();updatePollOptionControls();});row.append(input,remove);document.getElementById("poll-options-inputs").append(row);updatePollOptionControls();});
-    document.querySelectorAll(".poll-remove-option").forEach(btn=>btn.addEventListener("click",()=>{btn.closest(".poll-option-input").remove();updatePollOptionControls();}));
-    document.getElementById("poll-compose").addEventListener("submit",createPoll);
-    document.getElementById("menu-votes").addEventListener("click",openPolls);
-    document.getElementById("close-polls").addEventListener("click",()=>closeModal(pollModal));
-    document.getElementById("refresh-polls").addEventListener("click",loadPolls);
-    pollModal.addEventListener("click",event=>{if(event.target===pollModal)closeModal(pollModal);});
     function setAuthButtons() {
       document.getElementById("open-auth").hidden = !!currentUser;
       document.getElementById("logout-btn").hidden = !currentUser;
@@ -989,7 +902,7 @@
       menuUser.textContent = authStatus.textContent;
     }
     function clearMyReactions() {
-      myReactions.likes.clear(); myReactions.favorites.clear(); myReactions.votes.clear();
+      myReactions.likes.clear(); myReactions.favorites.clear();
     }
     async function loadMyPermissions() {
       memberPermissions = { can_like: false, can_vote: false, can_favorite: false, can_post_notice: false };
