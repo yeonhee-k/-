@@ -164,7 +164,7 @@
       </button>
       <nav id="account-menu" class="account-menu" aria-label="계정 관리">
         <div id="menu-user" class="menu-user">로그인하지 않았어요</div>
-        <button class="menu-item" id="menu-announcements" type="button"><span>📢</span> 공지</button>
+        <button class="menu-item" id="menu-announcements" type="button"><span>📢</span> 공지사항</button>
         <button class="menu-item" id="menu-favorites" type="button"><span>☆</span> 즐겨찾기</button>
         <button class="menu-item" id="menu-votes" type="button"><span>🗳️</span> 투표</button>
         <hr class="menu-divider">
@@ -620,10 +620,27 @@
       `;
     }
 
-    const markers = gyms.map(gym => ({
-      gym,
-      marker: L.marker([gym.lat, gym.lng]).bindPopup(createGymPopup(gym))
-    }));
+    // 즐겨찾기 암장은 지도에서 빨간 별 아이콘으로 표시합니다.
+    const favoriteStarIcon = L.divIcon({
+      className: "favorite-star-marker",
+      html: '<span aria-label="즐겨찾기 암장" style="display:block;color:#ef4444;font-size:31px;line-height:34px;text-shadow:0 1px 3px #ffffff,0 0 2px #ffffff;">★</span>',
+      iconSize: [34, 38],
+      iconAnchor: [17, 34],
+      popupAnchor: [0, -30]
+    });
+    const markers = gyms.map(gym => {
+      const marker = L.marker([gym.lat, gym.lng]).bindPopup(createGymPopup(gym));
+      marker._goClimbDefaultIcon = marker.options.icon;
+      return { gym, marker };
+    });
+    function updateFavoriteMarkerIcons() {
+      markers.forEach(({ gym, marker }) => {
+        const isFavorite = myReactions.favorites.has(String(gym.id));
+        marker.setIcon(isFavorite ? favoriteStarIcon : marker._goClimbDefaultIcon);
+        if (isFavorite) marker.setZIndexOffset(1000);
+        else marker.setZIndexOffset(0);
+      });
+    }
 
     // 5. 검색 및 필터
     const search = document.getElementById("search");
@@ -695,18 +712,10 @@
           if (target) target.marker.openPopup();
         });
 
-        if (hasPermission("can_edit_gyms")) {
-          const editButton = document.createElement("button");
-          editButton.type = "button"; editButton.textContent = "암장 정보 수정";
-          editButton.addEventListener("click", () => editGymInfo(gym));
-          item.appendChild(editButton);
-        }
-
         const reactions = document.createElement("div");
         reactions.className = "reaction-actions";
         const reactionDefinitions = [
           { type: "like", permission: "can_like", label: `👍 좋아요 ${reactionCounts[String(gym.id)]?.likes || 0}`, active: myReactions.likes.has(String(gym.id)) },
-          { type: "vote", permission: "can_vote", label: `🗳️ 추천 ${reactionCounts[String(gym.id)]?.votes || 0}`, active: myReactions.votes.has(String(gym.id)) },
           { type: "favorite", permission: "can_favorite", label: `${myReactions.favorites.has(String(gym.id)) ? "★" : "☆"} 즐겨찾기`, active: myReactions.favorites.has(String(gym.id)) }
         ];
         reactionDefinitions.filter(def => hasPermission(def.permission)).forEach(def => {
@@ -759,7 +768,7 @@
     let currentUser = null;
     let currentProfile = null;
     let isMaster = false;
-    let memberPermissions = { can_like: false, can_vote: false, can_favorite: false, can_post_notice: false, can_edit_gyms: false };
+    let memberPermissions = { can_like: false, can_vote: false, can_favorite: false, can_post_notice: false };
     const myReactions = { likes: new Set(), favorites: new Set(), votes: new Set() };
     let reactionCounts = {};
 
@@ -789,7 +798,6 @@
       { key: "can_vote", label: "추천 투표" },
       { key: "can_favorite", label: "즐겨찾기" },
       { key: "can_post_notice", label: "공지 작성" },
-      { key: "can_edit_gyms", label: "암장 정보 수정" }
     ];
     function hasPermission(key) {
       return isMaster || (currentProfile?.status === "approved" && memberPermissions[key] === true);
@@ -864,35 +872,10 @@
       myReactions.likes.clear(); myReactions.favorites.clear(); myReactions.votes.clear();
     }
     async function loadMyPermissions() {
-      memberPermissions = { can_like: false, can_vote: false, can_favorite: false, can_post_notice: false, can_edit_gyms: false };
+      memberPermissions = { can_like: false, can_vote: false, can_favorite: false, can_post_notice: false };
       if (!supabaseClient || !currentUser || isMaster) return;
-      const { data, error } = await supabaseClient.from("member_permissions").select("can_like,can_vote,can_favorite,can_post_notice,can_edit_gyms").eq("user_id", currentUser.id).maybeSingle();
+      const { data, error } = await supabaseClient.from("member_permissions").select("can_like,can_vote,can_favorite,can_post_notice").eq("user_id", currentUser.id).maybeSingle();
       if (!error && data) memberPermissions = { ...memberPermissions, ...data };
-    }
-    async function loadGymOverrides() {
-      if (!supabaseClient) return;
-      const { data, error } = await supabaseClient.from("gym_overrides").select("gym_id,name,address,hours,price");
-      if (error) { console.warn("암장 수정 정보를 불러오지 못했습니다:", error.message); return; }
-      (data || []).forEach(row => {
-        const gym = gyms.find(item => String(item.id) === String(row.gym_id));
-        if (!gym) return;
-        ["name", "address", "hours", "price"].forEach(key => { if (row[key] !== null && row[key] !== undefined) gym[key] = row[key]; });
-      });
-      markers.forEach(({ gym, marker }) => marker.setPopupContent(createGymPopup(gym)));
-    }
-    async function editGymInfo(gym) {
-      if (!hasPermission("can_edit_gyms")) { alert("암장 정보 수정 권한이 없어요."); return; }
-      const name = prompt("암장 이름", gym.name); if (name === null) return;
-      const address = prompt("주소", gym.address || ""); if (address === null) return;
-      const hours = prompt("이용시간", gym.hours || ""); if (hours === null) return;
-      const price = prompt("이용요금", gym.price || ""); if (price === null) return;
-      const payload = { gym_id: String(gym.id), name: name.trim(), address: address.trim(), hours: hours.trim(), price: price.trim(), updated_by: currentUser.id };
-      const { error } = await supabaseClient.from("gym_overrides").upsert(payload, { onConflict: "gym_id" });
-      if (error) { alert("암장 정보를 저장하지 못했어요: " + error.message); return; }
-      Object.assign(gym, { name: payload.name, address: payload.address, hours: payload.hours, price: payload.price });
-      markers.forEach(({ gym: markerGym, marker }) => marker.setPopupContent(createGymPopup(markerGym)));
-      renderGyms();
-      alert("암장 정보를 저장했어요.");
     }
     let announcementAutoShown = false;
     async function loadAnnouncements() {
@@ -907,9 +890,9 @@
         const article = document.createElement("article"); article.className = "announcement-item";
         const title = document.createElement("h3"); title.textContent = item.title;
         const body = document.createElement("p"); body.textContent = item.body;
-        const date = document.createElement("small"); date.textContent = item.created_at ? new Date(item.created_at).toLocaleString("ko-KR") : "";
+        const date = document.createElement("small"); date.textContent = item.created_at ? "작성일: " + new Date(item.created_at).toLocaleString("ko-KR") : "작성일 정보 없음";
         article.append(title, body, date);
-        if (isMaster) {
+        if (hasPermission("can_post_notice")) {
           const del = document.createElement("button"); del.type = "button"; del.className = "reject-btn"; del.textContent = "공지 삭제";
           del.addEventListener("click", async () => {
             if (!confirm("이 공지를 삭제할까요?")) return;
@@ -931,19 +914,23 @@
       if (error) { alert("공지를 등록하지 못했어요: " + error.message); return; }
       document.getElementById("announcement-form").reset();
       await loadAnnouncements();
+      announcementAutoShown = true;
+      openModal(announcementOverlay);
       alert("공지를 등록했어요.");
     }
     async function loadMyReactions() {
       clearMyReactions();
-      if (!supabaseClient || !currentUser || (!isMaster && currentProfile?.status !== "approved")) return;
-      const [likes, favorites, votes] = await Promise.all([
+      if (!supabaseClient || !currentUser || (!isMaster && currentProfile?.status !== "approved")) {
+        updateFavoriteMarkerIcons();
+        return;
+      }
+      const [likes, favorites] = await Promise.all([
         supabaseClient.from("gym_likes").select("gym_id").eq("user_id", currentUser.id),
-        supabaseClient.from("gym_favorites").select("gym_id").eq("user_id", currentUser.id),
-        supabaseClient.from("gym_votes").select("gym_id").eq("user_id", currentUser.id)
+        supabaseClient.from("gym_favorites").select("gym_id").eq("user_id", currentUser.id)
       ]);
       (likes.data || []).forEach(row => myReactions.likes.add(String(row.gym_id)));
       (favorites.data || []).forEach(row => myReactions.favorites.add(String(row.gym_id)));
-      (votes.data || []).forEach(row => myReactions.votes.add(String(row.gym_id)));
+      updateFavoriteMarkerIcons();
     }
     async function loadReactionCounts() {
       if (!supabaseClient) return;
@@ -974,7 +961,6 @@
         if (!error) currentProfile = data;
       }
       await loadMyPermissions();
-      await loadGymOverrides();
       await loadMyReactions();
       await loadReactionCounts();
       setAuthButtons();
@@ -1035,6 +1021,7 @@
     async function logout() {
       if (supabaseClient) await supabaseClient.auth.signOut();
       currentUser = null; currentProfile = null; isMaster = false; clearMyReactions();
+      updateFavoriteMarkerIcons();
       setAuthButtons(); renderGyms();
     }
     async function toggleReaction(gymId, type) {
@@ -1046,7 +1033,6 @@
       const config = {
         like: { table: "gym_likes", set: myReactions.likes },
         favorite: { table: "gym_favorites", set: myReactions.favorites },
-        vote: { table: "gym_votes", set: myReactions.votes }
       }[type];
       if (!config) return;
       let result;
@@ -1056,7 +1042,7 @@
         result = await supabaseClient.from(config.table).insert({ user_id: currentUser.id, gym_id: gymId });
       }
       if (result.error) { alert("저장하지 못했어요: " + result.error.message); return; }
-      await loadMyReactions(); await loadReactionCounts(); renderGyms();
+      await loadMyReactions(); await loadReactionCounts(); updateFavoriteMarkerIcons(); renderGyms();
     }
     async function loadPendingMembers() {
       const list = document.getElementById("pending-list");
@@ -1091,7 +1077,7 @@
       container.textContent = "회원 목록을 불러오는 중...";
       const { data: members, error } = await supabaseClient.from("profiles").select("id,email,display_name,status,created_at").order("created_at", { ascending: false });
       if (error) { container.textContent = "회원 목록을 불러오지 못했어요: " + error.message; return; }
-      const { data: perms, error: permissionError } = await supabaseClient.from("member_permissions").select("user_id,can_like,can_vote,can_favorite,can_post_notice,can_edit_gyms");
+      const { data: perms, error: permissionError } = await supabaseClient.from("member_permissions").select("user_id,can_like,can_vote,can_favorite,can_post_notice");
       if (permissionError) { container.textContent = "권한 목록을 불러오지 못했어요. SQL 설정을 실행했는지 확인하세요."; return; }
       const permissionByUser = Object.fromEntries((perms || []).map(p => [p.user_id, p]));
       container.replaceChildren();
@@ -1120,7 +1106,29 @@
           if (currentUser?.id === member.id) await refreshMemberState();
           alert(`${member.display_name || member.email || "회원"} 권한을 저장했어요.`);
         });
-        card.append(grid, save); container.appendChild(card);
+        const deleteMember = document.createElement("button");
+        deleteMember.type = "button";
+        deleteMember.className = "reject-btn";
+        deleteMember.style.marginTop = "10px";
+        deleteMember.textContent = "회원 강제 탈퇴";
+        deleteMember.addEventListener("click", async () => {
+          if (!isMaster) { alert("마스터 계정만 회원을 탈퇴시킬 수 있어요."); return; }
+          if (member.id === currentUser?.id) { alert("현재 로그인한 마스터 계정은 여기서 탈퇴시킬 수 없어요."); return; }
+          const display = member.display_name || member.email || "이 회원";
+          if (!confirm(`${display} 회원을 강제 탈퇴시키고 계정을 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) return;
+          deleteMember.disabled = true;
+          deleteMember.textContent = "탈퇴 처리 중...";
+          const { error: deleteError } = await supabaseClient.rpc("master_delete_member", { target_user_id: member.id });
+          if (deleteError) {
+            alert("회원 탈퇴에 실패했어요. Supabase에 master_delete_member 함수를 설정했는지 확인해 주세요.\n" + deleteError.message);
+            deleteMember.disabled = false;
+            deleteMember.textContent = "회원 강제 탈퇴";
+            return;
+          }
+          alert(`${display} 회원을 탈퇴 처리했어요.`);
+          await loadPendingMembers();
+        });
+        card.append(grid, save, deleteMember); container.appendChild(card);
       });
     }
     async function updateMemberStatus(userId, status) {
