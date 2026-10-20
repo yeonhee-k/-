@@ -672,7 +672,7 @@
           ${difficultyHTML}
           <p><span class="detail-label">단체 할인 혜택:</span> ${gym.groupDiscount || "정보 없음"}</p>
           <p><span class="detail-label">대관 비용:</span> ${gym.rentalCost || "정보 없음"}</p>
-          <p><span class="detail-label">삼각대:</span> ${tripodText}</p>
+          <p><span class="detail-label">삼각대 대여:</span> ${tripodText}</p>
           <p><span class="detail-label">휴무요일:</span> ${gym.closedDays || "정보 없음"}</p>
           <p><span class="detail-label">자판기:</span> ${gym.vendingMachine || "정보 없음"}</p>
         </div>
@@ -744,6 +744,21 @@
     const markers = gyms.map(gym => {
       const marker = L.marker([gym.lat, gym.lng]).bindPopup(createGymPopup(gym), { autoPan: false });
       marker._goClimbDefaultIcon = marker.options.icon;
+      // 마커를 직접 눌러도 '지도에서 위치 보기'와 같은 위치로 이동합니다.
+      marker.on("click", () => {
+        const isMobile = window.matchMedia("(max-width: 700px)").matches;
+        if (isMobile) {
+          gymSidebar.classList.remove("expanded");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        window.setTimeout(() => {
+          map.invalidateSize({ pan: false });
+          map.setView(marker.getLatLng(), 15, { animate: false });
+          // 암장 필터와 겹치지 않도록 마커/팝업을 화면에서 조금 아래에 둡니다.
+          map.panBy([0, -100], { animate: false });
+          marker.openPopup();
+        }, isMobile ? 350 : 120);
+      });
       return { gym, marker };
     });
     function updateFavoriteMarkerIcons() {
