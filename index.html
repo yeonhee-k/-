@@ -38,7 +38,11 @@
     #count { margin: 20px 2px 12px; font-size: 13px; color: var(--muted); }
     .gym { padding: 18px 12px; margin: 0 -6px 8px; border: 1px solid var(--line); border-radius: 14px; background: white; }
     .gym:hover { border-color: #bfd2ff; box-shadow: 0 5px 18px #243b530b; }
-    .gym h3 { margin: 0 0 10px; font-size: 16px; }
+    .gym-heading-row { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+    .gym-heading-row h3 { margin:0 0 10px; font-size:16px; min-width:0; }
+    .gym-favorite-star { flex:0 0 36px; width:36px !important; height:36px; margin: -6px -4px 0 0 !important; padding:0 !important; border:0; background:transparent !important; color:#94a3b8; font-size:30px; line-height:1; cursor:pointer; }
+    .gym-favorite-star.is-favorite { color:#ef4444; }
+    .gym-favorite-star:hover { background:transparent !important; color:#ef4444; }
     .gym p { margin: 7px 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
     .gym button { width: 100%; margin-top: 10px; padding: 11px; border: 0; border-radius: 9px; background: #edf4ff; color: var(--blue); font-weight: 700; cursor: pointer; }
     .gym button:hover { background: var(--blue); color: white; }
@@ -80,9 +84,6 @@
     .auth-primary { background:var(--blue); color:#fff; }
     .auth-secondary { background:#edf4ff; color:var(--blue); }
     .auth-status { font-size:12px; color:var(--muted); }
-    .reaction-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; margin-top:10px; }
-    .reaction-actions button { padding:9px 4px; font-size:11px; background:#f1f5f9; color:#334155; white-space:normal; }
-    .reaction-actions button.active { background:#dbeafe; color:#1d4ed8; }
     .modal-overlay { position:fixed; inset:0; z-index:5000; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(15,23,42,.55); }
     .modal-overlay.hidden { display:none; }
     .modal-card { width:min(100%,440px); max-height:90vh; overflow:auto; padding:22px; border-radius:16px; background:#fff; box-shadow:0 20px 60px #0003; }
@@ -130,12 +131,27 @@
     .announcement-compose input, .announcement-compose textarea { width:100%; padding:10px; border:1px solid #dbe3ee; border-radius:9px; font:inherit; margin:5px 0 9px; }
     .announcement-compose textarea { min-height:90px; resize:vertical; }
     .announcement-compose button { width:100%; }
+    .poll-modal-card { width:min(760px,100%); max-height:88vh; overflow:auto; }
+    .poll-compose { border:1px solid #dbe3ee; border-radius:12px; padding:14px; margin:14px 0 20px; }
+    .poll-compose input, .poll-compose select { width:100%; padding:11px; border:1px solid #dbe3ee; border-radius:9px; font:inherit; margin:5px 0 10px; }
+    .poll-option-input { display:flex; gap:8px; align-items:center; }
+    .poll-option-input input { flex:1; min-width:0; }
+    .poll-option-input button { margin-bottom:5px; }
+    .poll-item { border:1px solid #dbe3ee; border-radius:12px; padding:14px; margin:12px 0; }
+    .poll-item h3 { margin:0 0 6px; }
+    .poll-meta { color:#64748b; font-size:12px; margin:4px 0 10px; }
+    .poll-choice { display:flex; align-items:center; gap:8px; padding:9px 0; }
+    .poll-choice input { width:auto; }
+    .poll-result-row { margin:10px 0; }
+    .poll-result-label { display:flex; justify-content:space-between; gap:8px; font-size:14px; }
+    .poll-result-bar { background:#e8edf5; height:8px; border-radius:99px; overflow:hidden; margin-top:5px; }
+    .poll-result-bar span { display:block; height:100%; background:#2563eb; }
+    .poll-message { color:#b91c1c; font-size:13px; margin:8px 0; }
     @media (max-width:700px) {
       header { align-items:center; padding:14px 16px; }
       .brand h1 { font-size:20px; }
       .brand p { max-width:230px; line-height:1.4; }
       .auth-actions { width:100%; }
-      .reaction-actions button { font-size:10px; }
       .announcement-overlay { padding:10px; }
       .announcement-panel { padding:16px; max-height:78vh; }
       .pending-user { align-items:flex-start; flex-direction:column; }
@@ -218,10 +234,32 @@
       <div class="modal-buttons"><button id="close-saved-list" class="auth-primary" type="button">닫기</button></div>
     </div>
   </div>
+  <div id="poll-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="poll-modal-title">
+    <div class="modal-card poll-modal-card">
+      <h2 id="poll-modal-title">🗳️ 회원 투표</h2>
+      <p>투표 종료 시간에 도달하거나 승인된 모든 회원이 투표하면 자동으로 종료돼요.</p>
+      <form id="poll-compose" class="poll-compose" hidden>
+        <label for="poll-title-input">투표 제목</label>
+        <input id="poll-title-input" maxlength="180" required placeholder="예: 다음 정모 날짜는 언제가 좋을까요?">
+        <label>투표 항목</label>
+        <div id="poll-options-inputs">
+          <div class="poll-option-input"><input maxlength="300" required placeholder="투표 항목 1"><button type="button" class="auth-secondary poll-remove-option" aria-label="항목 삭제" hidden>−</button></div>
+          <div class="poll-option-input"><input maxlength="300" required placeholder="투표 항목 2"><button type="button" class="auth-secondary poll-remove-option" aria-label="항목 삭제" hidden>−</button></div>
+        </div>
+        <button id="poll-add-option" class="auth-secondary" type="button">＋ 투표 항목 추가</button>
+        <label for="poll-close-time" style="display:block;margin-top:12px">투표 종료 시간</label>
+        <input id="poll-close-time" type="datetime-local" required>
+        <button class="auth-primary" type="submit">투표 등록</button>
+        <div id="poll-compose-message" class="poll-message" aria-live="polite"></div>
+      </form>
+      <div id="poll-list">투표 목록을 불러오는 중...</div>
+      <div class="modal-buttons"><button id="refresh-polls" class="auth-secondary" type="button">새로고침</button><button id="close-polls" class="auth-primary" type="button">닫기</button></div>
+    </div>
+  </div>
   <div id="auth-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="auth-title">
     <div class="modal-card">
       <h2 id="auth-title">GO climb 회원</h2>
-      <p>회원가입 신청 후 마스터가 승인하면 좋아요·추천 투표·즐겨찾기를 사용할 수 있어요.</p>
+      <p>회원가입 신청 후 마스터가 승인하면 즐겨찾기와 회원 투표를 사용할 수 있어요.</p>
       <form id="auth-form">
         <label for="auth-name">닉네임 (가입 신청 시)</label>
         <input id="auth-name" type="text" maxlength="30" autocomplete="nickname" placeholder="닉네임">
@@ -718,6 +756,16 @@
 
         const title = document.createElement("h3");
         title.textContent = gym.name;
+        const headingRow = document.createElement("div");
+        headingRow.className = "gym-heading-row";
+        const favoriteButton = document.createElement("button");
+        favoriteButton.type = "button";
+        favoriteButton.className = "gym-favorite-star" + (myReactions.favorites.has(String(gym.id)) ? " is-favorite" : "");
+        favoriteButton.textContent = myReactions.favorites.has(String(gym.id)) ? "★" : "☆";
+        favoriteButton.setAttribute("aria-label", myReactions.favorites.has(String(gym.id)) ? "즐겨찾기 해제" : "즐겨찾기 등록");
+        favoriteButton.title = favoriteButton.getAttribute("aria-label");
+        favoriteButton.addEventListener("click", () => toggleReaction(String(gym.id), "favorite"));
+        headingRow.append(title, favoriteButton);
 
         const region = document.createElement("p");
         region.textContent = `📍 ${gym.region || gym.address || "지역 정보 없음"}`;
@@ -741,27 +789,7 @@
           if (target) target.marker.openPopup();
         });
 
-        const reactions = document.createElement("div");
-        reactions.className = "reaction-actions";
-        const reactionDefinitions = [
-          { type: "like", permission: "can_like", label: `👍 좋아요 ${reactionCounts[String(gym.id)]?.likes || 0}`, active: myReactions.likes.has(String(gym.id)) },
-          { type: "favorite", permission: "can_favorite", label: `${myReactions.favorites.has(String(gym.id)) ? "★" : "☆"} 즐겨찾기`, active: myReactions.favorites.has(String(gym.id)) }
-        ];
-        reactionDefinitions.filter(def => hasPermission(def.permission)).forEach(def => {
-          const reactionButton = document.createElement("button");
-          reactionButton.type = "button"; reactionButton.dataset.reaction = def.type;
-          reactionButton.className = def.active ? "active" : ""; reactionButton.textContent = def.label;
-          reactionButton.addEventListener("click", () => toggleReaction(String(gym.id), def.type));
-          reactions.appendChild(reactionButton);
-        });
-        if (!reactions.childElementCount) {
-          const note = document.createElement("small");
-          note.style.color = "var(--muted)";
-          note.textContent = currentUser ? "이용 가능한 기능 권한이 아직 없어요." : "로그인 및 마스터 승인 후 이용할 수 있어요.";
-          reactions.appendChild(note);
-        }
-
-        item.append(title, region, type, facilityBox, details, reactions, button);
+        item.append(headingRow, region, type, facilityBox, details, button);
         gymList.appendChild(item);
       });
 
@@ -785,7 +813,7 @@
 
     window.addEventListener("resize", () => map.invalidateSize());
 
-    // ===== GO climb 회원/좋아요/투표/즐겨찾기 =====
+    // ===== GO climb 회원/투표/즐겨찾기 =====
     // 1) Supabase 프로젝트를 만든 뒤 아래 두 값을 본인 프로젝트 값으로 교체하세요.
     // 프런트엔드에는 anon/publishable key만 사용하고 service_role key는 절대 넣지 마세요.
     const SUPABASE_URL = "https://wkaswsmgvlvrimrsjxav.supabase.co";
@@ -883,6 +911,68 @@
       }
       openModal(savedListModal);
     }
+    const pollModal = document.getElementById("poll-modal");
+    const pollCompose = document.getElementById("poll-compose");
+    const pollList = document.getElementById("poll-list");
+    function canManagePolls() { return isMaster || (currentProfile?.status === "approved" && memberPermissions.can_post_notice === true); }
+    function canVoteInPolls() { return isMaster || currentProfile?.status === "approved"; }
+    function pollMessage(message, isError=true) {
+      const el=document.getElementById("poll-compose-message"); el.textContent=message; el.style.color=isError?"#b91c1c":"#047857";
+    }
+    function openPolls() {
+      closeAccountMenu();
+      if (!currentUser) { openModal(authModal); showAuthView("login"); setMessage(authMessage,"투표를 보려면 먼저 로그인해 주세요.","error"); return; }
+      openModal(pollModal); pollCompose.hidden=!canManagePolls(); loadPolls();
+    }
+    function updatePollOptionControls() {
+      const rows=[...document.querySelectorAll("#poll-options-inputs .poll-option-input")];
+      rows.forEach((row,i)=>{ row.querySelector("input").placeholder=`투표 항목 ${i+1}`; row.querySelector(".poll-remove-option").hidden=rows.length<=2; });
+    }
+    async function loadPolls() {
+      if (!supabaseClient) { pollList.textContent="Supabase 설정을 확인해 주세요."; return; }
+      pollList.textContent="투표 목록을 불러오는 중...";
+      const {data:polls,error}=await supabaseClient.from("polls").select("id,title,created_at,closes_at,closed,created_by").order("created_at",{ascending:false});
+      if(error){pollList.textContent="투표 기능 데이터베이스 설정이 필요해요. 제공된 SQL 설정 파일을 Supabase SQL Editor에서 실행해 주세요. ("+error.message+")";return;}
+      pollList.replaceChildren();
+      if(!polls?.length){pollList.textContent="등록된 투표가 없어요.";return;}
+      const now=Date.now();
+      for(const poll of polls){
+        const {data:opts, error:oe}=await supabaseClient.from("poll_options").select("id,label").eq("poll_id",poll.id).order("sort_order");
+        if(oe) continue;
+        const {data:votes}=await supabaseClient.from("poll_votes").select("option_id,user_id").eq("poll_id",poll.id);
+        const voteRows=votes||[]; const myVote=voteRows.find(v=>v.user_id===currentUser.id);
+        const ended=!!poll.closed || new Date(poll.closes_at).getTime()<=now;
+        const card=document.createElement("article");card.className="poll-item";
+        const title=document.createElement("h3");title.textContent=poll.title;
+        const meta=document.createElement("div");meta.className="poll-meta";meta.textContent=(ended?"투표 종료":"진행 중")+" · 종료 예정: "+new Date(poll.closes_at).toLocaleString("ko-KR")+" · 참여 "+new Set(voteRows.map(v=>v.user_id)).size+"명";
+        card.append(title,meta);
+        if(ended){
+          for(const opt of opts){const count=voteRows.filter(v=>v.option_id===opt.id).length;const pct=voteRows.length?Math.round(count/voteRows.length*100):0;const row=document.createElement("div");row.className="poll-result-row";const label=document.createElement("div");label.className="poll-result-label";const name=document.createElement("span");name.textContent=opt.label;const value=document.createElement("strong");value.textContent=`${count}표 (${pct}%)`;label.append(name,value);const bar=document.createElement("div");bar.className="poll-result-bar";const fill=document.createElement("span");fill.style.width=pct+"%";bar.append(fill);row.append(label,bar);card.append(row);}
+          const total=document.createElement("small");total.textContent=`총 ${voteRows.length}표`;card.append(total);
+        } else if(myVote){const note=document.createElement("p");note.textContent="투표 완료했어요. 결과는 투표 종료 후 공개돼요.";card.append(note);}
+        else if(canVoteInPolls()){
+          const form=document.createElement("form");opts.forEach((opt,i)=>{const label=document.createElement("label");label.className="poll-choice";const input=document.createElement("input");input.type="radio";input.name="poll-choice-"+poll.id;input.value=opt.id;input.required=true;const text=document.createElement("span");text.textContent=opt.label;label.append(input,text);form.append(label);});const btn=document.createElement("button");btn.type="submit";btn.className="auth-primary";btn.textContent="투표하기";form.append(btn);form.addEventListener("submit",async ev=>{ev.preventDefault();btn.disabled=true;const selected=form.querySelector("input:checked")?.value;const {error:voteError}=await supabaseClient.rpc("cast_go_climb_vote",{target_poll_id:poll.id,target_option_id:selected});if(voteError){alert("투표하지 못했어요: "+voteError.message);btn.disabled=false;}else await loadPolls();});card.append(form);
+        } else {const note=document.createElement("p");note.textContent="투표 권한이 없어요. 마스터에게 권한을 요청해 주세요.";card.append(note);}
+        pollList.append(card);
+      }
+    }
+    async function createPoll(event){
+      event.preventDefault(); if(!canManagePolls()){pollMessage("투표 작성 권한이 없어요.");return;}
+      const title=document.getElementById("poll-title-input").value.trim();
+      const options=[...document.querySelectorAll("#poll-options-inputs input")].map(x=>x.value.trim()).filter(Boolean);
+      const localValue=document.getElementById("poll-close-time").value; const closeDate=new Date(localValue);
+      if(!title||options.length<2||options.some(x=>!x)||!localValue||Number.isNaN(closeDate.getTime())||closeDate.getTime()<=Date.now()){pollMessage("제목, 항목 2개 이상과 미래의 종료 시간을 입력해 주세요.");return;}
+      const {data,error}=await supabaseClient.rpc("create_go_climb_poll",{poll_title:title,poll_options:options,poll_closes_at:closeDate.toISOString()});
+      if(error){pollMessage("등록 실패: "+error.message);return;}
+      pollCompose.reset();document.getElementById("poll-options-inputs").innerHTML='<div class="poll-option-input"><input maxlength="300" required placeholder="투표 항목 1"><button type="button" class="auth-secondary poll-remove-option" aria-label="항목 삭제" hidden>−</button></div><div class="poll-option-input"><input maxlength="300" required placeholder="투표 항목 2"><button type="button" class="auth-secondary poll-remove-option" aria-label="항목 삭제" hidden>−</button></div>';updatePollOptionControls();pollMessage("투표를 등록했어요.",false);await loadPolls();
+    }
+    document.getElementById("poll-add-option").addEventListener("click",()=>{const row=document.createElement("div");row.className="poll-option-input";const input=document.createElement("input");input.maxLength=300;input.required=true;const remove=document.createElement("button");remove.type="button";remove.className="auth-secondary poll-remove-option";remove.textContent="−";remove.setAttribute("aria-label","항목 삭제");remove.addEventListener("click",()=>{row.remove();updatePollOptionControls();});row.append(input,remove);document.getElementById("poll-options-inputs").append(row);updatePollOptionControls();});
+    document.querySelectorAll(".poll-remove-option").forEach(btn=>btn.addEventListener("click",()=>{btn.closest(".poll-option-input").remove();updatePollOptionControls();}));
+    document.getElementById("poll-compose").addEventListener("submit",createPoll);
+    document.getElementById("menu-votes").addEventListener("click",openPolls);
+    document.getElementById("close-polls").addEventListener("click",()=>closeModal(pollModal));
+    document.getElementById("refresh-polls").addEventListener("click",loadPolls);
+    pollModal.addEventListener("click",event=>{if(event.target===pollModal)closeModal(pollModal);});
     function setAuthButtons() {
       document.getElementById("open-auth").hidden = !!currentUser;
       document.getElementById("logout-btn").hidden = !currentUser;
@@ -1055,7 +1145,7 @@
     }
     async function toggleReaction(gymId, type) {
       if (!supabaseClient) { openModal(authModal); setMessage(authMessage, "회원 기능을 사용하려면 먼저 Supabase 설정을 완료해야 해요.", "error"); return; }
-      if (!currentUser) { openModal(authModal); setMessage(authMessage, "좋아요·추천·즐겨찾기는 로그인 후 이용할 수 있어요.", "error"); return; }
+      if (!currentUser) { openModal(authModal); setMessage(authMessage, "즐겨찾기는 로그인 후 이용할 수 있어요.", "error"); return; }
       if (!isMaster && currentProfile?.status !== "approved") { openModal(authModal); setMessage(authMessage, "마스터가 가입을 승인한 뒤 이용할 수 있어요.", "error"); return; }
       const requiredPermission = { like: "can_like", vote: "can_vote", favorite: "can_favorite" }[type];
       if (!requiredPermission || !hasPermission(requiredPermission)) { alert("이 기능은 마스터가 권한을 부여한 회원만 사용할 수 있어요."); return; }
@@ -1182,7 +1272,6 @@
     });
     document.getElementById("menu-announcements").addEventListener("click", openAnnouncements);
     document.getElementById("menu-favorites").addEventListener("click", () => showSavedGyms("favorites"));
-    document.getElementById("menu-votes").addEventListener("click", () => showSavedGyms("votes"));
     document.getElementById("close-announcements").addEventListener("click", () => closeModal(announcementOverlay));
     announcementOverlay.addEventListener("click", event => { if (event.target === announcementOverlay) closeModal(announcementOverlay); });
     document.getElementById("close-saved-list").addEventListener("click", () => closeModal(savedListModal));
