@@ -312,16 +312,36 @@
       window.setTimeout(() => map.invalidateSize({ pan: false }), 250);
     }
     let sidebarTouchStartY = null;
+    function finishSidebarSwipe(endY) {
+      if (sidebarTouchStartY === null) return;
+      const delta = endY - sidebarTouchStartY;
+      let changed = false;
+      if (delta < -22 && !gymSidebar.classList.contains("expanded")) {
+        gymSidebar.classList.add("expanded");
+        changed = true;
+      } else if (delta > 48 && gymSidebar.classList.contains("expanded") && gymSidebar.scrollTop <= 5) {
+        gymSidebar.classList.remove("expanded");
+        changed = true;
+      }
+      sidebarTouchStartY = null;
+      if (changed) window.setTimeout(() => map.invalidateSize({ pan: false }), 250);
+    }
     sidebarHandle.addEventListener("touchstart", event => {
       sidebarTouchStartY = event.touches[0].clientY;
     }, { passive: true });
     sidebarHandle.addEventListener("touchend", event => {
-      if (sidebarTouchStartY === null) return;
-      const delta = event.changedTouches[0].clientY - sidebarTouchStartY;
-      if (delta < -18) gymSidebar.classList.add("expanded");
-      else if (delta > 18) gymSidebar.classList.remove("expanded");
-      sidebarTouchStartY = null;
-      window.setTimeout(() => map.invalidateSize({ pan: false }), 250);
+      finishSidebarSwipe(event.changedTouches[0].clientY);
+    }, { passive: true });
+
+    // 손잡이를 누르지 않아도 패널 안에서 위/아래로 빠르게 쓸어 패널을 열고 닫습니다.
+    // 목록을 스크롤하는 동작과 겹치지 않도록, 아래로 내릴 때는 패널 스크롤이 맨 위일 때만 접습니다.
+    gymSidebar.addEventListener("touchstart", event => {
+      if (event.target.closest("#sidebar-drag-handle") || event.target.closest("input, button, select, textarea, a")) return;
+      sidebarTouchStartY = event.touches[0].clientY;
+    }, { passive: true });
+    gymSidebar.addEventListener("touchend", event => {
+      if (event.target.closest("#sidebar-drag-handle")) return;
+      finishSidebarSwipe(event.changedTouches[0].clientY);
     }, { passive: true });
     sidebarHandle.addEventListener("click", () => {
       if (!mobileLayoutQuery.matches) return;
@@ -650,7 +670,7 @@
           <p><span class="detail-label">이용시간:</span> ${gym.hours || "정보 없음"}</p>
           <div class="difficulty-title">난이도</div>
           ${difficultyHTML}
-          <p><span class="detail-label">단체 할인:</span> ${gym.groupDiscount || "정보 없음"}</p>
+          <p><span class="detail-label">단체 할인 혜택:</span> ${gym.groupDiscount || "정보 없음"}</p>
           <p><span class="detail-label">대관 비용:</span> ${gym.rentalCost || "정보 없음"}</p>
           <p><span class="detail-label">삼각대:</span> ${tripodText}</p>
           <p><span class="detail-label">휴무요일:</span> ${gym.closedDays || "정보 없음"}</p>
