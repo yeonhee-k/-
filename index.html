@@ -650,7 +650,7 @@
           <p><span class="detail-label">이용시간:</span> ${gym.hours || "정보 없음"}</p>
           <div class="difficulty-title">난이도</div>
           ${difficultyHTML}
-          <p><span class="detail-label">단체 할인</span> ${gym.groupDiscount || "정보 없음"}</p>
+          <p><span class="detail-label">단체 할인:</span> ${gym.groupDiscount || "정보 없음"}</p>
           <p><span class="detail-label">대관 비용:</span> ${gym.rentalCost || "정보 없음"}</p>
           <p><span class="detail-label">삼각대:</span> ${tripodText}</p>
           <p><span class="detail-label">휴무요일:</span> ${gym.closedDays || "정보 없음"}</p>
@@ -828,6 +828,9 @@
               ? target.marker.getLatLng()
               : L.latLng(Number(gym.lat), Number(gym.lng));
             map.setView(position, 15, { animate: false });
+            // 필터 패널과 겹치지 않도록 마커와 팝업을 화면 중앙보다 아래에 배치합니다.
+            // 지도 중심을 위로 이동하면 마커/팝업은 화면에서 아래로 내려옵니다.
+            map.panBy([0, -100], { animate: false });
             if (target) target.marker.openPopup();
           }, isMobile ? 350 : 120);
         });
