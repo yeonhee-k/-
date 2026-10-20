@@ -190,6 +190,9 @@
     .feature-topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px; background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:2; }
     .feature-topbar h2 { margin:0; font-size:21px; }
     .feature-content { width:min(100%,1000px); margin:0 auto; padding:20px; flex:1; }
+    #calendar-view { overflow:hidden; }
+    #calendar-view .feature-content { width:100%; max-width:none; padding:12px; display:flex; flex-direction:column; min-height:0; }
+    #calendar-view .feature-card.calendar-month-card { flex:1; min-height:0; display:flex; flex-direction:column; margin:0; padding:14px; }
     .feature-card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:16px; box-shadow:0 5px 20px #172b4d08; }
     .feature-card h3 { margin:0 0 14px; font-size:17px; }
     .feature-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
@@ -208,17 +211,23 @@
     .pass-progress span { display:block; height:100%; background:#16a34a; }
     .calendar-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
     .calendar-toolbar h3 { margin:0; font-size:20px; }
-    .calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+    .calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); grid-template-rows:auto repeat(6,minmax(0,1fr)); gap:5px; flex:1; min-height:0; }
     .calendar-weekday { text-align:center; color:var(--muted); font-size:12px; font-weight:700; padding:8px 0; }
-    .calendar-day { min-height:94px; border:1px solid var(--line); border-radius:10px; background:#fff; text-align:left; padding:8px; color:var(--navy); cursor:pointer; overflow:hidden; }
+    .calendar-day { min-height:0; height:100%; border:1px solid var(--line); border-radius:10px; background:#fff; text-align:left; padding:8px; color:var(--navy); cursor:pointer; overflow:hidden; }
     .calendar-day:disabled { cursor:default; background:transparent; border-color:transparent; }
     .calendar-day.today { border-color:#2563eb; box-shadow:inset 0 0 0 1px #2563eb; }
     .calendar-day.selected { background:#edf4ff; border-color:#2563eb; }
     .calendar-day .day-number { font-size:13px; font-weight:800; }
     .calendar-visit { display:block; margin-top:5px; border-radius:5px; background:#dbeafe; color:#1d4ed8; padding:3px 4px; font-size:11px; line-height:1.3; overflow-wrap:anywhere; }
-    .calendar-editor { margin-top:16px; }
+    .calendar-editor { display:none; position:fixed; z-index:5002; left:50%; bottom:0; transform:translateX(-50%); width:min(100%,760px); max-height:76dvh; overflow:auto; margin:0; border-radius:18px 18px 0 0; box-shadow:0 -12px 40px #172b4d30; padding:20px; }
+    .calendar-editor.open { display:block; }
+    .calendar-editor::before { content:""; display:block; width:42px; height:4px; border-radius:9px; background:#cbd5e1; margin:-7px auto 16px; }
+    .calendar-backdrop { display:none; position:fixed; inset:0; z-index:5001; background:#0f172a66; }
+    .calendar-backdrop.open { display:block; }
+    .pass-list-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .pass-total-badge { border-radius:999px; background:#eaf1ff; color:#1d4ed8; padding:5px 10px; font-size:12px; font-weight:800; white-space:nowrap; }
     .feature-note { color:var(--muted); font-size:12px; line-height:1.6; }
-    @media(max-width:640px) { .feature-content{padding:12px;} .feature-topbar{padding:13px 15px;} .feature-topbar h2{font-size:18px;} .feature-form-grid,.pass-list{grid-template-columns:1fr;} .calendar-grid{gap:3px;} .calendar-day{min-height:66px;padding:4px;border-radius:7px;} .calendar-visit{font-size:10px;padding:2px;} .calendar-weekday{font-size:11px;} }
+    @media(max-width:640px) { .feature-content{padding:12px;} .feature-topbar{padding:13px 15px;} .feature-topbar h2{font-size:18px;} .feature-form-grid,.pass-list{grid-template-columns:1fr;} .calendar-grid{gap:3px;} .calendar-day{padding:3px;border-radius:6px;} .calendar-day .day-number{font-size:12px;} .calendar-visit{font-size:9px;padding:2px;margin-top:3px;} .calendar-weekday{font-size:11px;padding:6px 0;} #calendar-view .feature-content{padding:8px;} #calendar-view .feature-card.calendar-month-card{padding:8px;} .calendar-toolbar{margin-bottom:10px;} .calendar-toolbar h3{font-size:18px;} .calendar-editor{padding:18px 16px calc(18px + env(safe-area-inset-bottom));} }
 
   </style>
 </head>
@@ -272,17 +281,18 @@
         <p class="feature-note">기간권은 등록일부터 선택한 기간으로 만료일이 자동 계산됩니다. 5회권·10회권은 유효기간 6개월 또는 1년을 선택할 수 있어요.</p>
         <div class="feature-actions"><button class="feature-primary" type="submit">이용권 저장</button><button class="feature-secondary" id="pass-cancel-edit" type="button" hidden>수정 취소</button></div>
       </form>
-      <div class="feature-card"><h3>내 이용권</h3><div id="pass-list" class="pass-list"></div><p id="pass-empty" class="feature-note">등록한 이용권이 아직 없어요.</p></div>
+      <div class="feature-card"><div class="pass-list-heading"><h3 style="margin-bottom:14px">내 이용권</h3><span id="pass-total" class="pass-total-badge">0개</span></div><div id="pass-list" class="pass-list"></div><p id="pass-empty" class="feature-note">등록한 이용권이 아직 없어요.</p></div>
     </div>
   </section>
 
   <section id="calendar-view" class="feature-view" aria-hidden="true">
     <div class="feature-topbar"><h2>📅 클라이밍 달력</h2><button class="feature-secondary" type="button" data-close-feature>지도 화면으로</button></div>
     <div class="feature-content">
-      <div class="feature-card">
+      <div class="feature-card calendar-month-card">
         <div class="calendar-toolbar"><button id="calendar-prev" class="feature-secondary" type="button" aria-label="이전 달">‹</button><h3 id="calendar-month-title"></h3><button id="calendar-next" class="feature-secondary" type="button" aria-label="다음 달">›</button></div>
         <div id="calendar-grid" class="calendar-grid"></div>
       </div>
+      <div id="calendar-backdrop" class="calendar-backdrop"></div>
       <form id="visit-form" class="feature-card calendar-editor">
         <h3 id="visit-form-title">방문 기록 등록</h3>
         <div class="feature-form-grid">
@@ -290,7 +300,7 @@
           <label class="feature-field">방문한 암장<select id="visit-gym" required></select></label>
         </div>
         <p class="feature-note">등록한 암장의 횟수권이 유효하면 방문 저장 시 1회 자동 차감됩니다. 같은 날짜의 기록을 수정하면 기존 차감은 되돌린 뒤 다시 계산해 중복 차감을 방지합니다.</p>
-        <div class="feature-actions"><button class="feature-primary" type="submit">방문 기록 저장</button><button class="feature-danger" id="visit-delete" type="button" hidden>기록 삭제</button></div>
+        <div class="feature-actions"><button class="feature-primary" type="submit">방문 기록 저장</button><button class="feature-danger" id="visit-delete" type="button" hidden>기록 삭제</button><button class="feature-secondary" id="close-visit-editor" type="button">닫기</button></div>
         <p id="visit-message" class="feature-note" aria-live="polite"></p>
       </form>
     </div>
@@ -1431,14 +1441,17 @@
     }
     function allGymNames() { return (Array.isArray(gyms)?gyms:[]).map(g=>g.name).filter(Boolean); }
     function fillGymSelect(select, selected='') { const names=allGymNames(); select.innerHTML=''; if(!names.length){select.add(new Option('등록된 암장 데이터가 없어요',''));return;} names.forEach(name=>select.add(new Option(name,name))); if(selected && names.includes(selected)) select.value=selected; }
-    function openFeature(which) { closeAccountMenu(); if (!currentUser) { openModal(authModal); setMessage(authMessage, '이용권과 달력은 로그인한 계정별로 저장돼요. 로그인해 주세요.', 'error'); return; } if (privateDataOwnerId !== currentUser.id) { loadPrivateUserData(); alert('계정 데이터를 불러오고 있어요. 잠시 후 다시 열어 주세요.'); return; } passesView.classList.toggle('active',which==='passes'); calendarView.classList.toggle('active',which==='calendar'); passesView.setAttribute('aria-hidden',String(which!=='passes')); calendarView.setAttribute('aria-hidden',String(which!=='calendar')); document.body.style.overflow='hidden'; if(which==='passes') renderPasses(); else {renderCalendar(); setVisitDate(selectedCalendarDate);} }
-    function closeFeatures() { passesView.classList.remove('active'); calendarView.classList.remove('active'); passesView.setAttribute('aria-hidden','true'); calendarView.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+    function openFeature(which) { closeAccountMenu(); if (!currentUser) { openModal(authModal); setMessage(authMessage, '이용권과 달력은 로그인한 계정별로 저장돼요. 로그인해 주세요.', 'error'); return; } if (privateDataOwnerId !== currentUser.id) { loadPrivateUserData(); alert('계정 데이터를 불러오고 있어요. 잠시 후 다시 열어 주세요.'); return; } passesView.classList.toggle('active',which==='passes'); calendarView.classList.toggle('active',which==='calendar'); passesView.setAttribute('aria-hidden',String(which!=='passes')); calendarView.setAttribute('aria-hidden',String(which!=='calendar')); document.body.style.overflow='hidden'; if(which==='passes') renderPasses(); else {renderCalendar(); setVisitDate(selectedCalendarDate); closeVisitEditor();} }
+    function closeVisitEditor() { visitForm.classList.remove('open'); document.getElementById('calendar-backdrop').classList.remove('open'); }
+    function openVisitEditor(date) { selectedCalendarDate=date; const d=parseLocalDate(date); calendarMonth=new Date(d.getFullYear(),d.getMonth(),1); renderCalendar(); setVisitDate(date); visitForm.classList.add('open'); document.getElementById('calendar-backdrop').classList.add('open'); }
+    function closeFeatures() { closeVisitEditor(); passesView.classList.remove('active'); calendarView.classList.remove('active'); passesView.setAttribute('aria-hidden','true'); calendarView.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
     function passExpiry(pass) { const type=pass.type; if(type==='5'||type==='10') return addMonths(pass.start,Number(pass.validity||6)); const months={'1m':1,'3m':3,'6m':6,'12m':12}[type]||1; return addMonths(pass.start,months); }
     function passTypeLabel(type) { return ({'5':'5회권','10':'10회권','1m':'1개월','3m':'3개월','6m':'6개월','12m':'1년'})[type]||type; }
     function passIsActive(pass, date=localDateString(new Date())) { return passExpiry(pass)>=date; }
     function renderPasses() {
       fillGymSelect(passGym,passGym.value); const passes=readData('passes'); passList.innerHTML='';
       document.getElementById('pass-empty').hidden=passes.length>0;
+      document.getElementById('pass-total').textContent=`${passes.length}개`;
       passes.sort((a,b)=>passExpiry(a).localeCompare(passExpiry(b))).forEach(pass=>{
         const isCount=pass.type==='5'||pass.type==='10'; const total=Number(pass.total||pass.type); const remaining=Number(pass.remaining||0); const expired=!passIsActive(pass); const card=document.createElement('article'); card.className='pass-item'+(expired?' expired':'');
         const title=document.createElement('h4'); title.textContent=pass.gym; const type=document.createElement('div'); type.textContent=passTypeLabel(pass.type); type.style.fontWeight='700';
@@ -1459,15 +1472,16 @@
     function renderCalendar() {
       const title=document.getElementById('calendar-month-title');title.textContent=`${calendarMonth.getFullYear()}년 ${calendarMonth.getMonth()+1}월`;const grid=document.getElementById('calendar-grid');grid.innerHTML='';['일','월','화','수','목','금','토'].forEach(d=>{const el=document.createElement('div');el.className='calendar-weekday';el.textContent=d;grid.append(el);});
       const first=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1);const offset=first.getDay();const days=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,0).getDate();const visits=readData('visits');const today=localDateString(new Date());
-      for(let i=0;i<offset;i++){const blank=document.createElement('button');blank.type='button';blank.className='calendar-day';blank.disabled=true;grid.append(blank);}for(let day=1;day<=days;day++){const date=localDateString(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),day));const btn=document.createElement('button');btn.type='button';btn.className='calendar-day'+(date===today?' today':'')+(date===selectedCalendarDate?' selected':'');btn.setAttribute('aria-label',date);const num=document.createElement('span');num.className='day-number';num.textContent=day;btn.append(num);visits.filter(v=>v.date===date).forEach(v=>{const tag=document.createElement('span');tag.className='calendar-visit';tag.textContent=v.gym;btn.append(tag);});btn.addEventListener('click',()=>{selectedCalendarDate=date;calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1);renderCalendar();setVisitDate(date);});grid.append(btn);}
+      for(let i=0;i<offset;i++){const blank=document.createElement('button');blank.type='button';blank.className='calendar-day';blank.disabled=true;grid.append(blank);}for(let day=1;day<=days;day++){const date=localDateString(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),day));const btn=document.createElement('button');btn.type='button';btn.className='calendar-day'+(date===today?' today':'')+(date===selectedCalendarDate?' selected':'');btn.setAttribute('aria-label',date);const num=document.createElement('span');num.className='day-number';num.textContent=day;btn.append(num);visits.filter(v=>v.date===date).forEach(v=>{const tag=document.createElement('span');tag.className='calendar-visit';tag.textContent=v.gym;btn.append(tag);});btn.addEventListener('click',()=>{openVisitEditor(date);});grid.append(btn);}
       fillGymSelect(visitGym,visitGym.value);setVisitDate(selectedCalendarDate);
     }
     function setVisitDate(date) { visitDate.value=date;editingVisitDate=date;const visit=readData('visits').find(v=>v.date===date);document.getElementById('visit-form-title').textContent=visit?`${date} 방문 기록 수정`:`${date} 방문 기록 등록`;document.getElementById('visit-delete').hidden=!visit;document.getElementById('visit-message').textContent=visit?(visit.passId?'횟수권 1회가 차감된 기록입니다.':'방문 기록이 있습니다.'):'선택한 날짜에 방문한 암장을 등록하세요.';if(visit)visitGym.value=visit.gym; }
     document.getElementById('calendar-prev').addEventListener('click',()=>{calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1);renderCalendar();});document.getElementById('calendar-next').addEventListener('click',()=>{calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1);renderCalendar();});
+    document.getElementById('close-visit-editor').addEventListener('click',closeVisitEditor);document.getElementById('calendar-backdrop').addEventListener('click',closeVisitEditor);
     visitDate.addEventListener('change',()=>{selectedCalendarDate=visitDate.value;const d=parseLocalDate(selectedCalendarDate);calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();});
     function restoreVisitPass(visit) { if(!visit?.passId)return;const passes=readData('passes');const p=passes.find(x=>x.id===visit.passId);if(p&&(p.type==='5'||p.type==='10'))p.remaining=Math.min(Number(p.total),Number(p.remaining)+1);saveData('passes',passes); }
-    visitForm.addEventListener('submit',e=>{e.preventDefault();const date=visitDate.value,gym=visitGym.value;if(!date||!gym)return;const visits=readData('visits');const old=visits.find(v=>v.date===date);if(old)restoreVisitPass(old);let passes=readData('passes');const pass=passes.find(p=>p.gym===gym&&(p.type==='5'||p.type==='10')&&passIsActive(p,date)&&Number(p.remaining)>0);let passId=null;if(pass){pass.remaining=Math.max(0,Number(pass.remaining)-1);passId=pass.id;saveData('passes',passes);}const item={date,gym,passId};const next=visits.filter(v=>v.date!==date);next.push(item);next.sort((a,b)=>a.date.localeCompare(b.date));saveData('visits',next);selectedCalendarDate=date;const d=parseLocalDate(date);calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();setVisitDate(date);document.getElementById('visit-message').textContent=pass?`${gym} 방문을 저장했고 ${passTypeLabel(pass.type)} 잔여 횟수를 1회 차감했어요.`:`${gym} 방문을 저장했어요. 사용 가능한 횟수권이 없어 횟수는 차감하지 않았어요.`;});
-    document.getElementById('visit-delete').addEventListener('click',()=>{const visits=readData('visits');const old=visits.find(v=>v.date===visitDate.value);if(!old)return;if(!confirm(`${old.date} 방문 기록을 삭제할까요? 차감된 횟수는 복구됩니다.`))return;restoreVisitPass(old);saveData('visits',visits.filter(v=>v.date!==old.date));renderCalendar();setVisitDate(old.date);document.getElementById('visit-message').textContent='방문 기록을 삭제했고 연결된 횟수권은 복구했어요.';});
+    visitForm.addEventListener('submit',e=>{e.preventDefault();const date=visitDate.value,gym=visitGym.value;if(!date||!gym)return;const visits=readData('visits');const old=visits.find(v=>v.date===date);if(old)restoreVisitPass(old);let passes=readData('passes');const pass=passes.find(p=>p.gym===gym&&(p.type==='5'||p.type==='10')&&passIsActive(p,date)&&Number(p.remaining)>0);let passId=null;if(pass){pass.remaining=Math.max(0,Number(pass.remaining)-1);passId=pass.id;saveData('passes',passes);}const item={date,gym,passId};const next=visits.filter(v=>v.date!==date);next.push(item);next.sort((a,b)=>a.date.localeCompare(b.date));saveData('visits',next);selectedCalendarDate=date;const d=parseLocalDate(date);calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();setVisitDate(date);closeVisitEditor();document.getElementById('visit-message').textContent=pass?`${gym} 방문을 저장했고 ${passTypeLabel(pass.type)} 잔여 횟수를 1회 차감했어요.`:`${gym} 방문을 저장했어요. 사용 가능한 횟수권이 없어 횟수는 차감하지 않았어요.`;});
+    document.getElementById('visit-delete').addEventListener('click',()=>{const visits=readData('visits');const old=visits.find(v=>v.date===visitDate.value);if(!old)return;if(!confirm(`${old.date} 방문 기록을 삭제할까요? 차감된 횟수는 복구됩니다.`))return;restoreVisitPass(old);saveData('visits',visits.filter(v=>v.date!==old.date));renderCalendar();setVisitDate(old.date);closeVisitEditor();document.getElementById('visit-message').textContent='방문 기록을 삭제했고 연결된 횟수권은 복구했어요.';});
     document.getElementById('menu-passes').addEventListener('click',()=>{openFeature('passes');});document.getElementById('menu-calendar').addEventListener('click',()=>{openFeature('calendar');});document.querySelectorAll('[data-close-feature]').forEach(b=>b.addEventListener('click',closeFeatures));
     document.addEventListener('keydown',event=>{if(event.key==='Escape')closeFeatures();});
     passStart.value=localDateString(new Date());fillGymSelect(passGym);fillGymSelect(visitGym);updatePassValidityVisibility();
