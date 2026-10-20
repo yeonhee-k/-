@@ -49,12 +49,15 @@
     .facility-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
     .facility-tag { display: inline-block; padding: 5px 8px; border-radius: 6px; background: #edf4ff; color: #2563eb; font-size: 11px; font-weight: 700; }
     #map { width: 100%; height: 100%; min-height: 500px; background: #e7f0fa; z-index: 1; }
+    /* 지도 기본 마커를 약 2/3 크기로 축소 */
+    #map .leaflet-marker-icon:not(.favorite-star-marker) { width:17px !important; height:27px !important; margin-left:-8px !important; margin-top:-27px !important; }
+    #map .leaflet-marker-shadow { width:25px !important; height:27px !important; margin-left:-8px !important; margin-top:-27px !important; }
     .leaflet-popup-content-wrapper { border-radius: 12px; }
     .leaflet-popup-content { font-size: 13px; line-height: 1.7; }
     .gym-popup h3 { margin: 0 0 6px; font-size: 16px; }
     .gym-popup p { margin: 5px 0; }
-    .gym-filter-panel { width: 205px; padding: 14px; background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15); color: #243047; font-size: 13px; }
-    .gym-filter-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0; font-size:15px; }
+    .gym-filter-panel { width: 205px; padding: 12px; background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15); color: #243047; font-size: 12px; }
+    .gym-filter-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0; font-size:13px; }
     .gym-filter-toggle { flex:0 0 34px; width:34px !important; height:32px; margin:0 !important; padding:0 !important; font-size:22px; line-height:1; background:#edf3ff; color:#2864df; border-radius:8px; }
     .gym-filter-content { margin-top:10px; }
     .gym-filter-panel.collapsed .gym-filter-content { display:none; }
@@ -165,8 +168,8 @@
       .sidebar { order: 2; padding: 24px 16px 16px; overflow: visible; border-right: 0; }
       #search { display:block; width:100%; margin:0; padding:14px 16px; }
       #count { margin:12px 2px 12px; }
-      .gym-filter-panel { width: 174px; padding: 9px; font-size: 12px; }
-      .gym-filter-heading { font-size: 13px; }
+      .gym-filter-panel { width: 174px; padding: 8px; font-size: 11px; }
+      .gym-filter-heading { font-size: 12px; }
       .gym-filter-toggle { flex-basis:30px; width:30px !important; height:29px; }
       .gym-filter-panel label { gap:6px; margin:8px 0; }
       .gym-filter-panel input[type="checkbox"] { width:14px; height:14px; flex:0 0 14px; }
@@ -690,10 +693,10 @@
     // 즐겨찾기 암장은 지도에서 빨간 별 아이콘으로 표시합니다.
     const favoriteStarIcon = L.divIcon({
       className: "favorite-star-marker",
-      html: '<span aria-label="즐겨찾기 암장" style="display:block;color:#ef4444;font-size:31px;line-height:34px;text-shadow:0 1px 3px #ffffff,0 0 2px #ffffff;">★</span>',
-      iconSize: [34, 38],
-      iconAnchor: [17, 34],
-      popupAnchor: [0, -30]
+      html: '<span aria-label="즐겨찾기 암장" style="display:block;color:#ef4444;font-size:21px;line-height:23px;text-shadow:0 1px 2px #ffffff,0 0 2px #ffffff;">★</span>',
+      iconSize: [23, 26],
+      iconAnchor: [11, 23],
+      popupAnchor: [0, -22]
     });
     const markers = gyms.map(gym => {
       const marker = L.marker([gym.lat, gym.lng]).bindPopup(createGymPopup(gym));
@@ -851,8 +854,6 @@
     }
 
     const permissionDefinitions = [
-      { key: "can_like", label: "좋아요" },
-      { key: "can_vote", label: "추천 투표" },
       { key: "can_favorite", label: "즐겨찾기" },
       { key: "can_post_notice", label: "공지 작성" },
     ];
