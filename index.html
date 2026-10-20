@@ -15,9 +15,22 @@
       --bg: #f5f8fc;
     }
     body { margin: 0; font-family: "Malgun Gothic", Arial, sans-serif; color: var(--navy); background: var(--bg); }
-    header { min-height: 84px; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: white; border-bottom: 1px solid var(--line); }
-    header h1 { margin: 0 0 6px; font-size: 23px; letter-spacing: -1px; }
-    header p { margin: 0; color: var(--muted); font-size: 13px; }
+    header { min-height: 84px; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: white; border-bottom: 1px solid var(--line); position:relative; z-index:1200; }
+    .brand h1 { margin: 0 0 6px; font-size: 23px; letter-spacing: -1px; }
+    .brand p { margin: 0; color: var(--muted); font-size: 13px; }
+    .account-menu-wrap { position:relative; margin-left:auto; }
+    .menu-toggle { width:44px; height:44px; border:1px solid #dce4ef; border-radius:50%; background:#fff; color:var(--navy); display:grid; place-items:center; cursor:pointer; box-shadow:0 3px 12px #172b4d12; }
+    .menu-toggle:hover, .menu-toggle[aria-expanded="true"] { background:#edf4ff; border-color:#bfd2ff; }
+    .hamburger { display:flex; flex-direction:column; gap:4px; }
+    .hamburger span { display:block; width:18px; height:2px; border-radius:2px; background:currentColor; }
+    .account-menu { position:absolute; top:52px; right:0; width:240px; padding:10px; background:#fff; border:1px solid var(--line); border-radius:15px; box-shadow:0 16px 40px #172b4d20; display:none; }
+    .account-menu.open { display:block; }
+    .menu-user { padding:8px 10px 12px; color:var(--muted); font-size:12px; border-bottom:1px solid var(--line); margin-bottom:6px; overflow-wrap:anywhere; }
+    .menu-item { display:flex; align-items:center; gap:10px; width:100%; padding:11px 10px; border:0; border-radius:9px; background:transparent; color:var(--navy); font:inherit; font-size:14px; text-align:left; cursor:pointer; }
+    .menu-item:hover { background:#f1f5f9; }
+    .menu-divider { border:0; border-top:1px solid var(--line); margin:7px 0; }
+    .auth-actions { display:flex; flex-direction:column; gap:7px; padding:4px; }
+    .auth-actions button { width:100%; text-align:left; }
     .layout { display: grid; grid-template-columns: 340px minmax(0, 1fr); height: calc(100vh - 84px); min-height: 500px; }
     .sidebar { padding: 22px 18px; overflow-y: auto; background: white; border-right: 1px solid var(--line); }
     #search { width: 100%; padding: 14px 16px; border: 1px solid #dce4ef; border-radius: 14px; outline: none; font-size: 14px; }
@@ -94,8 +107,17 @@
     .permission-grid label { display:flex; align-items:center; gap:6px; margin:4px 0; font-weight:400; }
     .permission-grid input { width:auto; }
     .member-permission-card .save-permissions { margin-top:10px; width:100%; }
-    .announcement-panel { background:white; border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:18px; }
-    .announcement-panel h2 { font-size:17px; margin:0 0 10px; }
+    .announcement-overlay { position:fixed; inset:0; z-index:4500; display:flex; align-items:flex-start; justify-content:center; padding:22px 16px; background:rgba(15,23,42,.28); }
+    .announcement-overlay.hidden { display:none; }
+    .announcement-panel { width:min(100%,900px); max-height:min(72vh,620px); overflow:auto; background:white; border:1px solid var(--line); border-radius:18px; padding:20px 22px; box-shadow:0 20px 70px #0003; }
+    .announcement-heading-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
+    .announcement-panel h2 { font-size:18px; margin:0; }
+    .announcement-close { flex:0 0 auto; width:34px; height:34px; border:0; border-radius:50%; background:#f1f5f9; color:#334155; font-size:22px; line-height:1; cursor:pointer; }
+    .announcement-close:hover { background:#e2e8f0; }
+    .saved-list-modal { width:min(100%,560px); }
+    .saved-gym-row { padding:12px 0; border-top:1px solid var(--line); }
+    .saved-gym-row strong { display:block; margin-bottom:4px; }
+    .saved-gym-row small { color:var(--muted); }
     .announcement-item { padding:11px 0; border-top:1px solid var(--line); overflow-wrap:anywhere; }
     .announcement-item h3 { font-size:14px; margin:0 0 6px; }
     .announcement-item p { white-space:pre-wrap; margin:0 0 6px; font-size:13px; line-height:1.55; }
@@ -106,15 +128,18 @@
     .announcement-compose textarea { min-height:90px; resize:vertical; }
     .announcement-compose button { width:100%; }
     @media (max-width:700px) {
-      header { align-items:flex-start; }
+      header { align-items:center; padding:14px 16px; }
+      .brand h1 { font-size:20px; }
+      .brand p { max-width:230px; line-height:1.4; }
       .auth-actions { width:100%; }
-      .auth-actions button { flex:1; }
       .reaction-actions button { font-size:10px; }
+      .announcement-overlay { padding:10px; }
+      .announcement-panel { padding:16px; max-height:78vh; }
       .pending-user { align-items:flex-start; flex-direction:column; }
     }
 
     @media (max-width: 700px) {
-      header { min-height: auto; padding: 18px; align-items: flex-start; flex-direction: column; }
+      header { min-height: auto; padding: 14px 16px; align-items: center; flex-direction: row; }
       header h1 { font-size: 20px; }
       .layout { display: flex; flex-direction: column; height: auto; min-height: 0; }
       #map { order: 1; height: 55vh; min-height: 360px; }
@@ -129,26 +154,31 @@
 </head>
 <body>
   <header>
-    <h1>Go climb</h1>
-    <p>내가 가고 싶은 클라이밍 암장을 찾아보세요.</p>
-    <div class="auth-actions">
-      <span id="auth-status" class="auth-status">로그인하지 않았어요</span>
-      <button id="open-auth" class="auth-primary" type="button">로그인 / 가입 신청</button>
-      <button id="open-admin" class="auth-secondary" type="button" hidden>가입 승인 관리</button>
-      <button id="logout-btn" class="auth-secondary" type="button" hidden>로그아웃</button>
+    <div class="brand">
+      <h1>Go climb</h1>
+      <p>내가 가고 싶은 클라이밍 암장을 찾아보세요.</p>
+    </div>
+    <div class="account-menu-wrap">
+      <button id="menu-toggle" class="menu-toggle" type="button" aria-label="계정 관리 메뉴 열기" aria-expanded="false" aria-controls="account-menu">
+        <span class="hamburger" aria-hidden="true"><span></span><span></span><span></span></span>
+      </button>
+      <nav id="account-menu" class="account-menu" aria-label="계정 관리">
+        <div id="menu-user" class="menu-user">로그인하지 않았어요</div>
+        <button class="menu-item" id="menu-announcements" type="button"><span>📢</span> 공지</button>
+        <button class="menu-item" id="menu-favorites" type="button"><span>☆</span> 즐겨찾기</button>
+        <button class="menu-item" id="menu-votes" type="button"><span>🗳️</span> 투표</button>
+        <hr class="menu-divider">
+        <div class="auth-actions">
+          <button id="open-auth" class="auth-primary" type="button">로그인 / 가입 신청</button>
+          <button id="open-admin" class="auth-secondary" type="button" hidden>가입 승인 관리</button>
+          <button id="logout-btn" class="auth-secondary" type="button" hidden>로그아웃</button>
+        </div>
+      </nav>
+      <span id="auth-status" class="auth-status" hidden>로그인하지 않았어요</span>
     </div>
   </header>
   <main class="layout">
     <section class="sidebar">
-      <section class="announcement-panel" aria-labelledby="announcement-heading">
-        <h2 id="announcement-heading">📢 GO climb 공지사항</h2>
-        <div id="announcement-list"><p>공지사항을 불러오는 중...</p></div>
-        <form id="announcement-form" class="announcement-compose">
-          <input id="announcement-title" type="text" maxlength="120" placeholder="공지 제목" required>
-          <textarea id="announcement-body" maxlength="5000" placeholder="공지 내용을 입력하세요" required></textarea>
-          <button class="auth-primary" type="submit">공지 올리기</button>
-        </form>
-      </section>
       <input id="search" type="search" placeholder="암장 이름 또는 지역 검색">
       <p id="count"></p>
       <div id="gym-list"></div>
@@ -156,6 +186,28 @@
     <div id="map"></div>
   </main>
 
+  <div id="announcement-overlay" class="announcement-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="announcement-heading">
+    <section class="announcement-panel">
+      <div class="announcement-heading-row">
+        <h2 id="announcement-heading">📢 GO climb 공지사항</h2>
+        <button id="close-announcements" class="announcement-close" type="button" aria-label="공지 닫기">×</button>
+      </div>
+      <div id="announcement-list"><p>공지사항을 불러오는 중...</p></div>
+      <form id="announcement-form" class="announcement-compose">
+        <input id="announcement-title" type="text" maxlength="120" placeholder="공지 제목" required>
+        <textarea id="announcement-body" maxlength="5000" placeholder="공지 내용을 입력하세요" required></textarea>
+        <button class="auth-primary" type="submit">공지 올리기</button>
+      </form>
+    </section>
+  </div>
+  <div id="saved-list-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="saved-list-title">
+    <div class="modal-card saved-list-modal">
+      <h2 id="saved-list-title">즐겨찾기</h2>
+      <p id="saved-list-description">내가 저장한 암장 목록</p>
+      <div id="saved-list-content"></div>
+      <div class="modal-buttons"><button id="close-saved-list" class="auth-primary" type="button">닫기</button></div>
+    </div>
+  </div>
   <div id="auth-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="auth-title">
     <div class="modal-card">
       <h2 id="auth-title">GO climb 회원</h2>
@@ -170,9 +222,24 @@
         <div class="modal-buttons">
           <button class="auth-primary" type="submit" id="login-submit">로그인</button>
           <button class="auth-secondary" type="button" id="signup-submit">가입 신청</button>
-          <button class="auth-secondary" type="button" id="close-auth">닫기</button>
+        </div>
+        <div style="margin-top:10px;text-align:center">
+          <button class="auth-secondary" type="button" id="forgot-password" style="padding:8px 10px;font-size:13px">비밀번호를 잊으셨나요?</button>
+          <button class="auth-secondary" type="button" id="close-auth" style="padding:8px 10px;font-size:13px">닫기</button>
         </div>
       </form>
+      <section id="reset-password-panel" hidden>
+        <p>가입한 이메일 주소를 입력하면 비밀번호 재설정 링크를 보내드려요.</p>
+        <button class="auth-primary" type="button" id="send-reset-email" style="width:100%;margin-top:12px">재설정 이메일 보내기</button>
+        <button class="auth-secondary" type="button" id="back-to-login" style="width:100%;margin-top:8px">로그인으로 돌아가기</button>
+      </section>
+      <section id="new-password-panel" hidden>
+        <label for="new-password">새 비밀번호 (6자 이상)</label>
+        <input id="new-password" type="password" minlength="6" autocomplete="new-password" placeholder="새 비밀번호">
+        <label for="new-password-confirm">새 비밀번호 확인</label>
+        <input id="new-password-confirm" type="password" minlength="6" autocomplete="new-password" placeholder="새 비밀번호 다시 입력">
+        <button class="auth-primary" type="button" id="save-new-password" style="width:100%;margin-top:14px">비밀번호 변경</button>
+      </section>
       <div id="auth-message" class="modal-message" aria-live="polite"></div>
     </div>
   </div>
@@ -698,9 +765,24 @@
 
     const authModal = document.getElementById("auth-modal");
     const adminModal = document.getElementById("admin-modal");
+    const announcementOverlay = document.getElementById("announcement-overlay");
+    const accountMenu = document.getElementById("account-menu");
+    const menuToggle = document.getElementById("menu-toggle");
+    const savedListModal = document.getElementById("saved-list-modal");
     const authMessage = document.getElementById("auth-message");
     const authStatus = document.getElementById("auth-status");
     const authForm = document.getElementById("auth-form");
+    const resetPasswordPanel = document.getElementById("reset-password-panel");
+    const newPasswordPanel = document.getElementById("new-password-panel");
+    let passwordRecoveryMode = false;
+    function showAuthView(view) {
+      authForm.hidden = view !== "login";
+      resetPasswordPanel.hidden = view !== "reset";
+      newPasswordPanel.hidden = view !== "new-password";
+      if (view !== "new-password") passwordRecoveryMode = false;
+      if (view === "new-password") passwordRecoveryMode = true;
+      setMessage(authMessage, "");
+    }
 
     const permissionDefinitions = [
       { key: "can_like", label: "좋아요" },
@@ -718,17 +800,65 @@
     }
     function openModal(element) { element.classList.remove("hidden"); }
     function closeModal(element) { element.classList.add("hidden"); }
+    function closeAccountMenu() {
+      accountMenu.classList.remove("open");
+      menuToggle.setAttribute("aria-expanded", "false");
+      menuToggle.setAttribute("aria-label", "계정 관리 메뉴 열기");
+    }
+    function openAnnouncements() {
+      closeAccountMenu();
+      openModal(announcementOverlay);
+      loadAnnouncements();
+    }
+    function showSavedGyms(type) {
+      closeAccountMenu();
+      const isVote = type === "votes";
+      const title = isVote ? "내 투표" : "내 즐겨찾기";
+      document.getElementById("saved-list-title").textContent = title;
+      document.getElementById("saved-list-description").textContent = isVote ? "내가 추천 투표한 암장 목록" : "내가 즐겨찾기에 저장한 암장 목록";
+      const container = document.getElementById("saved-list-content");
+      container.replaceChildren();
+      if (!currentUser) {
+        container.textContent = "목록을 보려면 먼저 로그인해 주세요.";
+      } else if (!isMaster && currentProfile?.status !== "approved") {
+        container.textContent = "마스터의 가입 승인 후 이용할 수 있어요.";
+      } else {
+        const ids = isVote ? myReactions.votes : myReactions.favorites;
+        const permission = isVote ? "can_vote" : "can_favorite";
+        if (!hasPermission(permission)) {
+          container.textContent = "이 기능은 마스터가 권한을 부여한 회원만 사용할 수 있어요.";
+        } else {
+          const saved = gyms.filter(gym => ids.has(String(gym.id)));
+          if (!saved.length) container.textContent = isVote ? "아직 투표한 암장이 없어요." : "즐겨찾기한 암장이 없어요.";
+          saved.forEach(gym => {
+            const row = document.createElement("div"); row.className = "saved-gym-row";
+            const name = document.createElement("strong"); name.textContent = gym.name;
+            const region = document.createElement("small"); region.textContent = gym.region || gym.address || "";
+            const go = document.createElement("button"); go.type = "button"; go.className = "auth-secondary"; go.style.marginTop = "8px"; go.textContent = "지도에서 보기";
+            go.addEventListener("click", () => {
+              const markerEntry = markers.find(entry => String(entry.gym.id) === String(gym.id));
+              if (markerEntry) { map.setView(markerEntry.marker.getLatLng(), 15); markerEntry.marker.openPopup(); }
+              closeModal(savedListModal);
+            });
+            row.append(name, region, go); container.appendChild(row);
+          });
+        }
+      }
+      openModal(savedListModal);
+    }
     function setAuthButtons() {
       document.getElementById("open-auth").hidden = !!currentUser;
       document.getElementById("logout-btn").hidden = !currentUser;
       document.getElementById("open-admin").hidden = !isMaster;
       document.getElementById("announcement-form").classList.toggle("visible", hasPermission("can_post_notice"));
+      const menuUser = document.getElementById("menu-user");
       if (!currentUser) authStatus.textContent = "로그인하지 않았어요";
       else if (isMaster) authStatus.textContent = "마스터 계정";
       else if (currentProfile?.status === "approved") authStatus.textContent = `${currentProfile.display_name || currentUser.email} 회원`;
       else if (currentProfile?.status === "rejected") authStatus.textContent = "가입 거절됨";
       else if (currentProfile?.status === "suspended") authStatus.textContent = "계정 이용 정지";
       else authStatus.textContent = "가입 승인 대기 중";
+      menuUser.textContent = authStatus.textContent;
     }
     function clearMyReactions() {
       myReactions.likes.clear(); myReactions.favorites.clear(); myReactions.votes.clear();
@@ -764,6 +894,7 @@
       renderGyms();
       alert("암장 정보를 저장했어요.");
     }
+    let announcementAutoShown = false;
     async function loadAnnouncements() {
       const list = document.getElementById("announcement-list");
       if (!supabaseClient) { list.textContent = "Supabase 설정 후 공지사항을 표시할 수 있어요."; return; }
@@ -771,6 +902,7 @@
       if (error) { list.textContent = "공지사항을 불러오지 못했어요. 데이터베이스 설정을 확인해 주세요."; return; }
       list.replaceChildren();
       if (!data || !data.length) { list.textContent = "등록된 공지사항이 없어요."; return; }
+      if (!announcementAutoShown) { announcementAutoShown = true; openModal(announcementOverlay); }
       data.forEach(item => {
         const article = document.createElement("article"); article.className = "announcement-item";
         const title = document.createElement("h3"); title.textContent = item.title;
@@ -855,14 +987,9 @@
       const password = document.getElementById("auth-password").value;
       const displayName = document.getElementById("auth-name").value.trim();
       if (password.length < 6) { setMessage(authMessage, "비밀번호는 6자 이상 입력해 주세요.", "error"); return; }
-      const redirectTo = window.location.origin + window.location.pathname;
       const { error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { display_name: displayName },
-          emailRedirectTo: redirectTo
-        }
+        email, password,
+        options: { data: { display_name: displayName } }
       });
       if (error) { setMessage(authMessage, error.message, "error"); return; }
       setMessage(authMessage, "가입 신청이 접수됐어요. 이메일 확인이 필요할 수 있으며, 마스터 승인 후 기능을 사용할 수 있어요.", "success");
@@ -881,6 +1008,29 @@
         setMessage(authMessage, "로그인됐어요.", "success");
         setTimeout(() => closeModal(authModal), 500);
       }
+    }
+    async function sendPasswordReset() {
+      if (!supabaseClient) { setMessage(authMessage, "Supabase 설정을 확인해 주세요.", "error"); return; }
+      const email = document.getElementById("auth-email").value.trim();
+      if (!email) { setMessage(authMessage, "먼저 가입한 이메일 주소를 입력해 주세요.", "error"); document.getElementById("auth-email").focus(); return; }
+      const redirectTo = window.location.origin + window.location.pathname;
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) { setMessage(authMessage, "재설정 이메일을 보내지 못했어요: " + error.message, "error"); return; }
+      setMessage(authMessage, "비밀번호 재설정 링크를 요청했어요. 이메일 받은 편지함과 스팸함을 확인해 주세요.", "success");
+    }
+    async function saveNewPassword() {
+      if (!supabaseClient) return;
+      const password = document.getElementById("new-password").value;
+      const confirm = document.getElementById("new-password-confirm").value;
+      if (password.length < 6) { setMessage(authMessage, "새 비밀번호는 6자 이상 입력해 주세요.", "error"); return; }
+      if (password !== confirm) { setMessage(authMessage, "두 비밀번호가 서로 달라요.", "error"); return; }
+      const { error } = await supabaseClient.auth.updateUser({ password });
+      if (error) { setMessage(authMessage, "비밀번호를 변경하지 못했어요: " + error.message, "error"); return; }
+      passwordRecoveryMode = false;
+      setMessage(authMessage, "비밀번호가 변경됐어요. 새 비밀번호로 로그인할 수 있어요.", "success");
+      document.getElementById("new-password").value = "";
+      document.getElementById("new-password-confirm").value = "";
+      setTimeout(() => { showAuthView("login"); openModal(authModal); }, 1200);
     }
     async function logout() {
       if (supabaseClient) await supabaseClient.auth.signOut();
@@ -982,20 +1132,49 @@
       await loadPendingMembers();
     }
 
-    document.getElementById("open-auth").addEventListener("click", () => { setMessage(authMessage, ""); openModal(authModal); });
+    menuToggle.addEventListener("click", () => {
+      const open = accountMenu.classList.toggle("open");
+      menuToggle.setAttribute("aria-expanded", String(open));
+      menuToggle.setAttribute("aria-label", open ? "계정 관리 메뉴 닫기" : "계정 관리 메뉴 열기");
+    });
+    document.addEventListener("click", event => {
+      if (!event.target.closest(".account-menu-wrap")) closeAccountMenu();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") { closeAccountMenu(); closeModal(announcementOverlay); closeModal(savedListModal); }
+    });
+    document.getElementById("menu-announcements").addEventListener("click", openAnnouncements);
+    document.getElementById("menu-favorites").addEventListener("click", () => showSavedGyms("favorites"));
+    document.getElementById("menu-votes").addEventListener("click", () => showSavedGyms("votes"));
+    document.getElementById("close-announcements").addEventListener("click", () => closeModal(announcementOverlay));
+    announcementOverlay.addEventListener("click", event => { if (event.target === announcementOverlay) closeModal(announcementOverlay); });
+    document.getElementById("close-saved-list").addEventListener("click", () => closeModal(savedListModal));
+    savedListModal.addEventListener("click", event => { if (event.target === savedListModal) closeModal(savedListModal); });
+    document.getElementById("open-auth").addEventListener("click", () => { closeAccountMenu(); showAuthView("login"); openModal(authModal); });
     document.getElementById("close-auth").addEventListener("click", () => closeModal(authModal));
+    document.getElementById("forgot-password").addEventListener("click", () => showAuthView("reset"));
+    document.getElementById("send-reset-email").addEventListener("click", sendPasswordReset);
+    document.getElementById("back-to-login").addEventListener("click", () => showAuthView("login"));
+    document.getElementById("save-new-password").addEventListener("click", saveNewPassword);
     document.getElementById("login-submit").addEventListener("click", async event => { event.preventDefault(); await login(); });
     document.getElementById("signup-submit").addEventListener("click", signup);
     authForm.addEventListener("submit", async event => { event.preventDefault(); await login(); });
-    document.getElementById("logout-btn").addEventListener("click", logout);
-    document.getElementById("open-admin").addEventListener("click", async () => { openModal(adminModal); await loadPendingMembers(); });
+    document.getElementById("logout-btn").addEventListener("click", async () => { closeAccountMenu(); await logout(); });
+    document.getElementById("open-admin").addEventListener("click", async () => { closeAccountMenu(); openModal(adminModal); await loadPendingMembers(); });
     document.getElementById("close-admin").addEventListener("click", () => closeModal(adminModal));
     document.getElementById("refresh-pending").addEventListener("click", loadPendingMembers);
     document.getElementById("announcement-form").addEventListener("submit", publishAnnouncement);
     [authModal, adminModal].forEach(modal => modal.addEventListener("click", event => { if (event.target === modal) closeModal(modal); }));
 
     if (supabaseClient) {
-      supabaseClient.auth.onAuthStateChange(() => { setTimeout(refreshMemberState, 0); });
+      supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === "PASSWORD_RECOVERY") {
+          openModal(authModal);
+          showAuthView("new-password");
+          setMessage(authMessage, "새 비밀번호를 입력해 주세요.");
+        }
+        setTimeout(refreshMemberState, 0);
+      });
       refreshMemberState();
     } else {
       setAuthButtons();
