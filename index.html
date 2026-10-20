@@ -50,7 +50,10 @@
     .gym-popup h3 { margin: 0 0 6px; font-size: 16px; }
     .gym-popup p { margin: 5px 0; }
     .gym-filter-panel { width: 205px; padding: 14px; background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15); color: #243047; font-size: 13px; }
-    .gym-filter-panel h3 { margin: 0 0 10px; font-size: 15px; }
+    .gym-filter-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:0; font-size:15px; }
+    .gym-filter-toggle { flex:0 0 34px; width:34px !important; height:32px; margin:0 !important; padding:0 !important; font-size:22px; line-height:1; background:#edf3ff; color:#2864df; border-radius:8px; }
+    .gym-filter-content { margin-top:10px; }
+    .gym-filter-panel.collapsed .gym-filter-content { display:none; }
     .gym-filter-panel label { display: flex; align-items: center; gap: 8px; margin: 10px 0; cursor: pointer; }
     .gym-filter-panel input[type="checkbox"] { width: 16px; height: 16px; accent-color: #3978f6; cursor: pointer; }
     .gym-filter-panel button { width: 100%; margin-top: 8px; padding: 9px; border: none; border-radius: 8px; background: #edf3ff; color: #2864df; font-weight: bold; cursor: pointer; }
@@ -144,7 +147,12 @@
       .layout { display: flex; flex-direction: column; height: auto; min-height: 0; }
       #map { order: 1; height: 55vh; min-height: 360px; }
       .sidebar { order: 2; padding: 16px; overflow: visible; border-right: 0; }
-      .gym-filter-panel { width: 190px; }
+      .gym-filter-panel { width: 174px; padding: 9px; font-size: 12px; }
+      .gym-filter-heading { font-size: 13px; }
+      .gym-filter-toggle { flex-basis:30px; width:30px !important; height:29px; }
+      .gym-filter-panel label { gap:6px; margin:8px 0; }
+      .gym-filter-panel input[type="checkbox"] { width:14px; height:14px; flex:0 0 14px; }
+      .gym-filter-panel button#reset-gym-filters { padding:7px; font-size:11px; }
       .gym { width: 100%; margin: 0 0 12px; padding: 16px; }
       .gym-details summary { padding: 14px 0; }
       .details-content p { font-size: 14px; }
@@ -590,19 +598,38 @@
     filterControl.onAdd = function () {
       const div = L.DomUtil.create("div", "gym-filter-panel");
       div.innerHTML = `
-        <h3>암장 필터</h3>
-        <label><input type="checkbox" id="filter-kilter"> 킬터보드</label>
-        <label><input type="checkbox" id="filter-moon2016"> 문보드 2016</label>
-        <label><input type="checkbox" id="filter-moon2024"> 문보드 2024</label>
-        <label><input type="checkbox" id="filter-shower"> 샤워부스</label>
-        <label><input type="checkbox" id="filter-operating"> 현재 운영 중</label>
-        <button type="button" id="reset-gym-filters">필터 초기화</button>
+        <div class="gym-filter-heading">
+          <h3 style="margin:0">암장 필터</h3>
+          <button type="button" id="toggle-gym-filters" class="gym-filter-toggle" aria-label="필터 접기" aria-expanded="true">−</button>
+        </div>
+        <div class="gym-filter-content" id="gym-filter-content">
+          <label><input type="checkbox" id="filter-kilter"> 킬터보드</label>
+          <label><input type="checkbox" id="filter-moon2016"> 문보드 2016</label>
+          <label><input type="checkbox" id="filter-moon2024"> 문보드 2024</label>
+          <label><input type="checkbox" id="filter-shower"> 샤워부스</label>
+          <label><input type="checkbox" id="filter-operating"> 현재 운영 중</label>
+          <button type="button" id="reset-gym-filters">필터 초기화</button>
+        </div>
       `;
+      if (window.matchMedia("(max-width: 700px)").matches) {
+        div.classList.add("collapsed");
+        div.querySelector("#toggle-gym-filters").textContent = "+";
+        div.querySelector("#toggle-gym-filters").setAttribute("aria-label", "필터 펼치기");
+        div.querySelector("#toggle-gym-filters").setAttribute("aria-expanded", "false");
+      }
       L.DomEvent.disableClickPropagation(div);
       L.DomEvent.disableScrollPropagation(div);
       return div;
     };
     filterControl.addTo(map);
+    document.getElementById("toggle-gym-filters").addEventListener("click", () => {
+      const panel = document.querySelector(".gym-filter-panel");
+      const toggle = document.getElementById("toggle-gym-filters");
+      const collapsed = panel.classList.toggle("collapsed");
+      toggle.textContent = collapsed ? "+" : "−";
+      toggle.setAttribute("aria-label", collapsed ? "필터 펼치기" : "필터 접기");
+      toggle.setAttribute("aria-expanded", String(!collapsed));
+    });
 
     // 4. 마커 팝업
     function createGymPopup(gym) {
