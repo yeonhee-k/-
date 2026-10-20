@@ -183,6 +183,43 @@
       .details-content p { font-size: 14px; }
       .difficulty-level { min-height: 32px; }
     }
+
+    /* 이용권 및 전체 화면 달력 */
+    .feature-view { position:fixed; inset:0; z-index:5000; display:none; flex-direction:column; background:#f5f8fc; color:var(--navy); overflow:auto; }
+    .feature-view.active { display:flex; }
+    .feature-topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px; background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:2; }
+    .feature-topbar h2 { margin:0; font-size:21px; }
+    .feature-content { width:min(100%,1000px); margin:0 auto; padding:20px; flex:1; }
+    .feature-card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:16px; box-shadow:0 5px 20px #172b4d08; }
+    .feature-card h3 { margin:0 0 14px; font-size:17px; }
+    .feature-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .feature-field { display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; }
+    .feature-field input,.feature-field select { width:100%; min-width:0; padding:11px 12px; border:1px solid #dce4ef; border-radius:10px; background:#fff; color:var(--navy); font:inherit; font-weight:400; }
+    .feature-primary,.feature-secondary,.feature-danger { border:0; border-radius:10px; padding:11px 15px; font:inherit; font-weight:700; cursor:pointer; }
+    .feature-primary { background:#2563eb; color:#fff; } .feature-secondary { background:#edf2f8; color:var(--navy); } .feature-danger { background:#fff0f0; color:#b42318; }
+    .feature-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+    .pass-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .pass-item { border:1px solid var(--line); border-radius:14px; padding:15px; background:#fff; min-width:0; }
+    .pass-item.expired { opacity:.65; background:#f8fafc; }
+    .pass-item h4 { margin:0 0 7px; font-size:16px; overflow-wrap:anywhere; }
+    .pass-meta { font-size:13px; color:var(--muted); line-height:1.7; }
+    .pass-count { font-size:22px; font-weight:800; margin:7px 0; }
+    .pass-progress { height:6px; border-radius:99px; background:#e9eef5; overflow:hidden; margin:10px 0; }
+    .pass-progress span { display:block; height:100%; background:#16a34a; }
+    .calendar-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+    .calendar-toolbar h3 { margin:0; font-size:20px; }
+    .calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+    .calendar-weekday { text-align:center; color:var(--muted); font-size:12px; font-weight:700; padding:8px 0; }
+    .calendar-day { min-height:94px; border:1px solid var(--line); border-radius:10px; background:#fff; text-align:left; padding:8px; color:var(--navy); cursor:pointer; overflow:hidden; }
+    .calendar-day:disabled { cursor:default; background:transparent; border-color:transparent; }
+    .calendar-day.today { border-color:#2563eb; box-shadow:inset 0 0 0 1px #2563eb; }
+    .calendar-day.selected { background:#edf4ff; border-color:#2563eb; }
+    .calendar-day .day-number { font-size:13px; font-weight:800; }
+    .calendar-visit { display:block; margin-top:5px; border-radius:5px; background:#dbeafe; color:#1d4ed8; padding:3px 4px; font-size:11px; line-height:1.3; overflow-wrap:anywhere; }
+    .calendar-editor { margin-top:16px; }
+    .feature-note { color:var(--muted); font-size:12px; line-height:1.6; }
+    @media(max-width:640px) { .feature-content{padding:12px;} .feature-topbar{padding:13px 15px;} .feature-topbar h2{font-size:18px;} .feature-form-grid,.pass-list{grid-template-columns:1fr;} .calendar-grid{gap:3px;} .calendar-day{min-height:66px;padding:4px;border-radius:7px;} .calendar-visit{font-size:10px;padding:2px;} .calendar-weekday{font-size:11px;} }
+
   </style>
 </head>
 <body>
@@ -199,6 +236,8 @@
         <div id="menu-user" class="menu-user">로그인하지 않았어요</div>
         <button class="menu-item" id="menu-announcements" type="button"><span>📢</span> 공지사항</button>
         <button class="menu-item" id="menu-favorites" type="button"><span>☆</span> 즐겨찾기</button>
+        <button class="menu-item" id="menu-passes" type="button"><span>🎟️</span> 이용권</button>
+        <button class="menu-item" id="menu-calendar" type="button"><span>📅</span> 달력</button>
         <hr class="menu-divider">
         <div class="auth-actions">
           <button id="open-auth" class="auth-primary" type="button">로그인 / 가입 신청</button>
@@ -218,6 +257,44 @@
     </section>
     <div id="map"></div>
   </main>
+
+  <section id="passes-view" class="feature-view" aria-hidden="true">
+    <div class="feature-topbar"><h2>🎟️ 이용권 관리</h2><button class="feature-secondary" type="button" data-close-feature>지도 화면으로</button></div>
+    <div class="feature-content">
+      <form id="pass-form" class="feature-card">
+        <h3 id="pass-form-title">이용권 등록</h3>
+        <div class="feature-form-grid">
+          <label class="feature-field">암장 이름<select id="pass-gym" required></select></label>
+          <label class="feature-field">이용권 종류<select id="pass-type" required><option value="5">5회권</option><option value="10">10회권</option><option value="1m">1개월</option><option value="3m">3개월</option><option value="6m">6개월</option><option value="12m">1년</option></select></label>
+          <label class="feature-field">등록일<input id="pass-start" type="date" required></label>
+          <label class="feature-field" id="pass-validity-wrap">횟수권 유효기간<select id="pass-validity"><option value="6">6개월</option><option value="12">1년</option></select></label>
+        </div>
+        <p class="feature-note">기간권은 등록일부터 선택한 기간으로 만료일이 자동 계산됩니다. 5회권·10회권은 유효기간 6개월 또는 1년을 선택할 수 있어요.</p>
+        <div class="feature-actions"><button class="feature-primary" type="submit">이용권 저장</button><button class="feature-secondary" id="pass-cancel-edit" type="button" hidden>수정 취소</button></div>
+      </form>
+      <div class="feature-card"><h3>내 이용권</h3><div id="pass-list" class="pass-list"></div><p id="pass-empty" class="feature-note">등록한 이용권이 아직 없어요.</p></div>
+    </div>
+  </section>
+
+  <section id="calendar-view" class="feature-view" aria-hidden="true">
+    <div class="feature-topbar"><h2>📅 클라이밍 달력</h2><button class="feature-secondary" type="button" data-close-feature>지도 화면으로</button></div>
+    <div class="feature-content">
+      <div class="feature-card">
+        <div class="calendar-toolbar"><button id="calendar-prev" class="feature-secondary" type="button" aria-label="이전 달">‹</button><h3 id="calendar-month-title"></h3><button id="calendar-next" class="feature-secondary" type="button" aria-label="다음 달">›</button></div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+      </div>
+      <form id="visit-form" class="feature-card calendar-editor">
+        <h3 id="visit-form-title">방문 기록 등록</h3>
+        <div class="feature-form-grid">
+          <label class="feature-field">방문 날짜<input id="visit-date" type="date" required></label>
+          <label class="feature-field">방문한 암장<select id="visit-gym" required></select></label>
+        </div>
+        <p class="feature-note">등록한 암장의 횟수권이 유효하면 방문 저장 시 1회 자동 차감됩니다. 같은 날짜의 기록을 수정하면 기존 차감은 되돌린 뒤 다시 계산해 중복 차감을 방지합니다.</p>
+        <div class="feature-actions"><button class="feature-primary" type="submit">방문 기록 저장</button><button class="feature-danger" id="visit-delete" type="button" hidden>기록 삭제</button></div>
+        <p id="visit-message" class="feature-note" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
 
   <div id="announcement-overlay" class="announcement-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="announcement-heading">
     <section class="announcement-panel">
@@ -672,7 +749,7 @@
           ${difficultyHTML}
           <p><span class="detail-label">단체 할인 혜택:</span> ${gym.groupDiscount || "정보 없음"}</p>
           <p><span class="detail-label">대관 비용:</span> ${gym.rentalCost || "정보 없음"}</p>
-          <p><span class="detail-label">삼각대 대여:</span> ${tripodText}</p>
+          <p><span class="detail-label">삼각대:</span> ${tripodText}</p>
           <p><span class="detail-label">휴무요일:</span> ${gym.closedDays || "정보 없음"}</p>
           <p><span class="detail-label">자판기:</span> ${gym.vendingMachine || "정보 없음"}</p>
         </div>
@@ -1085,8 +1162,11 @@
         return;
       }
       const { data: { user } } = await supabaseClient.auth.getUser();
+      const previousUserId = currentUser?.id || null;
       currentUser = user || null;
       isMaster = !!(currentUser && currentUser.app_metadata && currentUser.app_metadata.role === "master");
+      if (currentUser) { await loadPrivateUserData(); }
+      else { privateUserData = { passes: [], visits: [] }; privateDataOwnerId = null; }
       currentProfile = null;
       if (currentUser) {
         const { data, error } = await supabaseClient.from("profiles")
@@ -1273,6 +1353,125 @@
       setMessage(message, status === "approved" ? "가입을 승인했어요." : "가입 신청을 거절했어요.", "success");
       await loadPendingMembers();
     }
+
+
+    // ===== 계정별 클라우드 이용권 및 방문 달력 =====
+    const passesView = document.getElementById('passes-view');
+    const calendarView = document.getElementById('calendar-view');
+    const passForm = document.getElementById('pass-form');
+    const passGym = document.getElementById('pass-gym');
+    const passType = document.getElementById('pass-type');
+    const passStart = document.getElementById('pass-start');
+    const passValidity = document.getElementById('pass-validity');
+    const passList = document.getElementById('pass-list');
+    const visitForm = document.getElementById('visit-form');
+    const visitDate = document.getElementById('visit-date');
+    const visitGym = document.getElementById('visit-gym');
+    let editingPassId = null;
+    let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    let selectedCalendarDate = localDateString(new Date());
+    let editingVisitDate = null;
+
+    function localDateString(date) { const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0'); return `${y}-${m}-${d}`; }
+    function parseLocalDate(value) { const [y,m,d]=value.split('-').map(Number); return new Date(y,m-1,d,12); }
+    function addMonths(dateString, months) { const d=parseLocalDate(dateString); const day=d.getDate(); d.setDate(1); d.setMonth(d.getMonth()+months); const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate(); d.setDate(Math.min(day,last)); return localDateString(d); }
+    // RLS가 적용된 Supabase 테이블에 사용자별 데이터를 저장합니다.
+    // 서버에서 불러온 현재 계정 데이터만 메모리에 유지하며 다른 계정의 데이터는 읽을 수 없습니다.
+    let privateUserData = { passes: [], visits: [] };
+    let privateDataOwnerId = null;
+    let privateSaveQueue = Promise.resolve();
+    let privateDataLoading = false;
+    function dataKey(kind) { return `goclimb_${kind}_v1_${currentUser?.id || 'guest'}`; }
+    function readData(kind) { return Array.isArray(privateUserData[kind]) ? privateUserData[kind] : []; }
+    async function loadPrivateUserData() {
+      if (!supabaseClient || !currentUser) return;
+      if (privateDataLoading && privateDataOwnerId === currentUser.id) return;
+      privateDataLoading = true;
+      const ownerId = currentUser.id;
+      try {
+        const { data, error } = await supabaseClient.from('private_climbing_data')
+          .select('passes,visits').eq('user_id', ownerId).maybeSingle();
+        if (error) throw error;
+        if (currentUser?.id !== ownerId) return;
+        if (data) {
+          privateUserData = { passes: Array.isArray(data.passes) ? data.passes : [], visits: Array.isArray(data.visits) ? data.visits : [] };
+        } else {
+          // 이전 버전에서 이 계정의 브라우저에 저장했던 자료가 있으면 최초 1회 가져옵니다.
+          let legacy = { passes: [], visits: [] };
+          try { legacy.passes = JSON.parse(localStorage.getItem(`goclimb_passes_v1_${ownerId}`) || '[]'); } catch {}
+          try { legacy.visits = JSON.parse(localStorage.getItem(`goclimb_visits_v1_${ownerId}`) || '[]'); } catch {}
+          privateUserData = { passes: Array.isArray(legacy.passes) ? legacy.passes : [], visits: Array.isArray(legacy.visits) ? legacy.visits : [] };
+          if (privateUserData.passes.length || privateUserData.visits.length) await persistPrivateUserData(ownerId);
+        }
+        privateDataOwnerId = ownerId;
+        if (passesView.classList.contains('active')) renderPasses();
+        if (calendarView.classList.contains('active')) renderCalendar();
+      } catch (error) {
+        console.error('이용권/달력 데이터 불러오기 실패:', error);
+        alert('이용권과 달력 데이터를 불러오지 못했어요. Supabase SQL 설정을 적용했는지 확인해 주세요.');
+      } finally { privateDataLoading = false; }
+    }
+    async function persistPrivateUserData(ownerId = currentUser?.id) {
+      if (!supabaseClient || !ownerId || currentUser?.id !== ownerId || privateDataOwnerId && privateDataOwnerId !== ownerId) return;
+      const payload = { user_id: ownerId, passes: privateUserData.passes, visits: privateUserData.visits, updated_at: new Date().toISOString() };
+      privateSaveQueue = privateSaveQueue.then(async () => {
+        if (currentUser?.id !== ownerId) return;
+        const { error } = await supabaseClient.from('private_climbing_data').upsert(payload, { onConflict: 'user_id' });
+        if (error) throw error;
+      });
+      try { await privateSaveQueue; }
+      catch (error) { console.error('클라우드 저장 실패:', error); alert('클라우드 저장에 실패했어요. Supabase SQL/RLS 설정과 인터넷 연결을 확인해 주세요.'); }
+    }
+    function saveData(kind, data) {
+      if (!currentUser) { alert('이용권과 방문 기록은 로그인한 계정에만 저장할 수 있어요.'); return; }
+      if (privateDataOwnerId !== currentUser.id) { alert('계정 데이터를 불러오는 중이에요. 잠시 후 다시 시도해 주세요.'); return; }
+      privateUserData[kind] = Array.isArray(data) ? data : [];
+      const ownerId = currentUser.id;
+      persistPrivateUserData(ownerId);
+    }
+    function allGymNames() { return (Array.isArray(gyms)?gyms:[]).map(g=>g.name).filter(Boolean); }
+    function fillGymSelect(select, selected='') { const names=allGymNames(); select.innerHTML=''; if(!names.length){select.add(new Option('등록된 암장 데이터가 없어요',''));return;} names.forEach(name=>select.add(new Option(name,name))); if(selected && names.includes(selected)) select.value=selected; }
+    function openFeature(which) { closeAccountMenu(); if (!currentUser) { openModal(authModal); setMessage(authMessage, '이용권과 달력은 로그인한 계정별로 저장돼요. 로그인해 주세요.', 'error'); return; } if (privateDataOwnerId !== currentUser.id) { loadPrivateUserData(); alert('계정 데이터를 불러오고 있어요. 잠시 후 다시 열어 주세요.'); return; } passesView.classList.toggle('active',which==='passes'); calendarView.classList.toggle('active',which==='calendar'); passesView.setAttribute('aria-hidden',String(which!=='passes')); calendarView.setAttribute('aria-hidden',String(which!=='calendar')); document.body.style.overflow='hidden'; if(which==='passes') renderPasses(); else {renderCalendar(); setVisitDate(selectedCalendarDate);} }
+    function closeFeatures() { passesView.classList.remove('active'); calendarView.classList.remove('active'); passesView.setAttribute('aria-hidden','true'); calendarView.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+    function passExpiry(pass) { const type=pass.type; if(type==='5'||type==='10') return addMonths(pass.start,Number(pass.validity||6)); const months={'1m':1,'3m':3,'6m':6,'12m':12}[type]||1; return addMonths(pass.start,months); }
+    function passTypeLabel(type) { return ({'5':'5회권','10':'10회권','1m':'1개월','3m':'3개월','6m':'6개월','12m':'1년'})[type]||type; }
+    function passIsActive(pass, date=localDateString(new Date())) { return passExpiry(pass)>=date; }
+    function renderPasses() {
+      fillGymSelect(passGym,passGym.value); const passes=readData('passes'); passList.innerHTML='';
+      document.getElementById('pass-empty').hidden=passes.length>0;
+      passes.sort((a,b)=>passExpiry(a).localeCompare(passExpiry(b))).forEach(pass=>{
+        const isCount=pass.type==='5'||pass.type==='10'; const total=Number(pass.total||pass.type); const remaining=Number(pass.remaining||0); const expired=!passIsActive(pass); const card=document.createElement('article'); card.className='pass-item'+(expired?' expired':'');
+        const title=document.createElement('h4'); title.textContent=pass.gym; const type=document.createElement('div'); type.textContent=passTypeLabel(pass.type); type.style.fontWeight='700';
+        const count=document.createElement('div'); count.className='pass-count'; count.textContent=isCount?`잔여 ${remaining} / ${total}회`:(expired?'기간 만료':'기간 이용권');
+        const meta=document.createElement('div'); meta.className='pass-meta'; meta.textContent=`등록일: ${pass.start} · 만료일: ${passExpiry(pass)}${isCount?' · 유효기간 '+(pass.validity==='12'?'1년':'6개월'):''}`;
+        card.append(title,type,count,meta);
+        if(isCount){const bar=document.createElement('div');bar.className='pass-progress';const span=document.createElement('span');span.style.width=`${Math.max(0,Math.min(100,remaining/total*100))}%`;bar.append(span);card.append(bar);}
+        const actions=document.createElement('div');actions.className='feature-actions';const edit=document.createElement('button');edit.type='button';edit.className='feature-secondary';edit.textContent='수정';edit.addEventListener('click',()=>editPass(pass.id));const del=document.createElement('button');del.type='button';del.className='feature-danger';del.textContent='삭제';del.addEventListener('click',()=>deletePass(pass.id));actions.append(edit,del);card.append(actions);passList.append(card);
+      });
+      updatePassValidityVisibility();
+    }
+    function updatePassValidityVisibility() { const isCount=['5','10'].includes(passType.value); document.getElementById('pass-validity-wrap').hidden=!isCount; }
+    function editPass(id) { const p=readData('passes').find(x=>x.id===id); if(!p)return; editingPassId=id; passGym.value=p.gym;passType.value=p.type;passStart.value=p.start;passValidity.value=p.validity||'6'; document.getElementById('pass-form-title').textContent='이용권 수정';document.getElementById('pass-cancel-edit').hidden=false;updatePassValidityVisibility();passForm.scrollIntoView({behavior:'smooth',block:'start'}); }
+    function resetPassForm() { editingPassId=null;passForm.reset();passStart.value=localDateString(new Date());document.getElementById('pass-form-title').textContent='이용권 등록';document.getElementById('pass-cancel-edit').hidden=true;updatePassValidityVisibility(); }
+    function deletePass(id) { if(!confirm('이 이용권을 삭제할까요?'))return; const visits=readData('visits'); if(visits.some(v=>v.passId===id)){alert('이용 기록에 연결된 이용권은 삭제할 수 없어요. 먼저 관련 방문 기록을 수정하거나 삭제해 주세요.');return;} saveData('passes',readData('passes').filter(p=>p.id!==id));renderPasses(); }
+    passForm.addEventListener('submit',async e=>{e.preventDefault();const passes=readData('passes');const type=passType.value;const existing=passes.find(p=>p.id===editingPassId);const isCount=type==='5'||type==='10';const total=isCount?Number(type):0;const item={id:editingPassId||`${Date.now()}_${Math.random().toString(36).slice(2,8)}`,gym:passGym.value,type,start:passStart.value,validity:isCount?passValidity.value:null,total,remaining:existing&&existing.type===type?Math.min(Number(existing.remaining),total):total}; if(!item.gym||!item.start){alert('암장과 등록일을 선택해 주세요.');return;} if(existing){const linked=readData('visits').some(v=>v.passId===existing.id);if(linked&&(existing.gym!==item.gym||existing.type!==item.type||existing.start!==item.start)){alert('방문 기록에 연결된 이용권은 암장·종류·등록일을 바꾸기 전에 방문 기록을 먼저 수정해 주세요.');return;} } const index=passes.findIndex(p=>p.id===item.id);if(index>=0)passes[index]=item;else passes.push(item);saveData('passes',passes);resetPassForm();renderPasses();alert(`이용권을 저장했어요. 만료일은 ${passExpiry(item)}입니다.`);});
+    passType.addEventListener('change',updatePassValidityVisibility);document.getElementById('pass-cancel-edit').addEventListener('click',resetPassForm);
+    function renderCalendar() {
+      const title=document.getElementById('calendar-month-title');title.textContent=`${calendarMonth.getFullYear()}년 ${calendarMonth.getMonth()+1}월`;const grid=document.getElementById('calendar-grid');grid.innerHTML='';['일','월','화','수','목','금','토'].forEach(d=>{const el=document.createElement('div');el.className='calendar-weekday';el.textContent=d;grid.append(el);});
+      const first=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1);const offset=first.getDay();const days=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,0).getDate();const visits=readData('visits');const today=localDateString(new Date());
+      for(let i=0;i<offset;i++){const blank=document.createElement('button');blank.type='button';blank.className='calendar-day';blank.disabled=true;grid.append(blank);}for(let day=1;day<=days;day++){const date=localDateString(new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),day));const btn=document.createElement('button');btn.type='button';btn.className='calendar-day'+(date===today?' today':'')+(date===selectedCalendarDate?' selected':'');btn.setAttribute('aria-label',date);const num=document.createElement('span');num.className='day-number';num.textContent=day;btn.append(num);visits.filter(v=>v.date===date).forEach(v=>{const tag=document.createElement('span');tag.className='calendar-visit';tag.textContent=v.gym;btn.append(tag);});btn.addEventListener('click',()=>{selectedCalendarDate=date;calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1);renderCalendar();setVisitDate(date);});grid.append(btn);}
+      fillGymSelect(visitGym,visitGym.value);setVisitDate(selectedCalendarDate);
+    }
+    function setVisitDate(date) { visitDate.value=date;editingVisitDate=date;const visit=readData('visits').find(v=>v.date===date);document.getElementById('visit-form-title').textContent=visit?`${date} 방문 기록 수정`:`${date} 방문 기록 등록`;document.getElementById('visit-delete').hidden=!visit;document.getElementById('visit-message').textContent=visit?(visit.passId?'횟수권 1회가 차감된 기록입니다.':'방문 기록이 있습니다.'):'선택한 날짜에 방문한 암장을 등록하세요.';if(visit)visitGym.value=visit.gym; }
+    document.getElementById('calendar-prev').addEventListener('click',()=>{calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()-1,1);renderCalendar();});document.getElementById('calendar-next').addEventListener('click',()=>{calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,1);renderCalendar();});
+    visitDate.addEventListener('change',()=>{selectedCalendarDate=visitDate.value;const d=parseLocalDate(selectedCalendarDate);calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();});
+    function restoreVisitPass(visit) { if(!visit?.passId)return;const passes=readData('passes');const p=passes.find(x=>x.id===visit.passId);if(p&&(p.type==='5'||p.type==='10'))p.remaining=Math.min(Number(p.total),Number(p.remaining)+1);saveData('passes',passes); }
+    visitForm.addEventListener('submit',e=>{e.preventDefault();const date=visitDate.value,gym=visitGym.value;if(!date||!gym)return;const visits=readData('visits');const old=visits.find(v=>v.date===date);if(old)restoreVisitPass(old);let passes=readData('passes');const pass=passes.find(p=>p.gym===gym&&(p.type==='5'||p.type==='10')&&passIsActive(p,date)&&Number(p.remaining)>0);let passId=null;if(pass){pass.remaining=Math.max(0,Number(pass.remaining)-1);passId=pass.id;saveData('passes',passes);}const item={date,gym,passId};const next=visits.filter(v=>v.date!==date);next.push(item);next.sort((a,b)=>a.date.localeCompare(b.date));saveData('visits',next);selectedCalendarDate=date;const d=parseLocalDate(date);calendarMonth=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();setVisitDate(date);document.getElementById('visit-message').textContent=pass?`${gym} 방문을 저장했고 ${passTypeLabel(pass.type)} 잔여 횟수를 1회 차감했어요.`:`${gym} 방문을 저장했어요. 사용 가능한 횟수권이 없어 횟수는 차감하지 않았어요.`;});
+    document.getElementById('visit-delete').addEventListener('click',()=>{const visits=readData('visits');const old=visits.find(v=>v.date===visitDate.value);if(!old)return;if(!confirm(`${old.date} 방문 기록을 삭제할까요? 차감된 횟수는 복구됩니다.`))return;restoreVisitPass(old);saveData('visits',visits.filter(v=>v.date!==old.date));renderCalendar();setVisitDate(old.date);document.getElementById('visit-message').textContent='방문 기록을 삭제했고 연결된 횟수권은 복구했어요.';});
+    document.getElementById('menu-passes').addEventListener('click',()=>{openFeature('passes');});document.getElementById('menu-calendar').addEventListener('click',()=>{openFeature('calendar');});document.querySelectorAll('[data-close-feature]').forEach(b=>b.addEventListener('click',closeFeatures));
+    document.addEventListener('keydown',event=>{if(event.key==='Escape')closeFeatures();});
+    passStart.value=localDateString(new Date());fillGymSelect(passGym);fillGymSelect(visitGym);updatePassValidityVisibility();
+
 
     menuToggle.addEventListener("click", () => {
       const open = accountMenu.classList.toggle("open");
