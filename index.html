@@ -163,9 +163,13 @@
     @media (max-width: 700px) {
       header { min-height: auto; padding: 14px 16px; align-items: center; flex-direction: row; }
       header h1 { font-size: 20px; }
-      .layout { display: flex; flex-direction: column; height: auto; min-height: 0; }
-      #map { order: 1; height: 55vh; min-height: 360px; }
-      .sidebar { order: 2; padding: 24px 16px 16px; overflow: visible; border-right: 0; }
+      .layout { display: block; height: calc(100dvh - 68px); min-height: 0; position: relative; }
+      #map { position:absolute; inset:0; width:100%; height:100%; min-height:0; }
+      .sidebar { position:fixed; z-index:1100; left:0; right:0; bottom:0; height:auto; max-height:76dvh; padding:10px 16px calc(16px + env(safe-area-inset-bottom)); overflow-y:auto; overscroll-behavior:contain; border:0; border-radius:18px 18px 0 0; box-shadow:0 -6px 24px #172b4d24; transition:max-height .22s ease; }
+      .sidebar-drag-handle { display:block; width:44px; height:5px; margin:0 auto 10px; border-radius:99px; background:#cbd5e1; touch-action:none; cursor:grab; }
+      .sidebar:not(.expanded) { max-height:112px; overflow:hidden; }
+      .sidebar:not(.expanded) #count, .sidebar:not(.expanded) #gym-list { display:none; }
+      .sidebar.expanded { max-height:76dvh; }
       #search { display:block; width:100%; margin:0; padding:14px 16px; }
       #count { margin:12px 2px 12px; }
       .gym-filter-panel { width: 174px; padding: 8px; font-size: 11px; }
@@ -206,7 +210,8 @@
     </div>
   </header>
   <main class="layout">
-    <section class="sidebar">
+    <section class="sidebar" id="gym-sidebar">
+      <div class="sidebar-drag-handle" id="sidebar-drag-handle" aria-label="위로 밀어 암장 목록 보기" role="button" tabindex="0" style="display:none"></div>
       <input id="search" type="search" placeholder="암장 이름 또는 지역 검색">
       <p id="count"></p>
       <div id="gym-list"></div>
@@ -291,6 +296,47 @@
   <script>
     // 1. 지도 생성
     const map = L.map("map", { zoomControl: false }).setView([36.5, 127.8], 7);
+
+    // 모바일에서는 검색창만 보이는 하단 패널을 손으로 밀어 올려 암장 목록/상세를 엽니다.
+    const gymSidebar = document.getElementById("gym-sidebar");
+    const sidebarHandle = document.getElementById("sidebar-drag-handle");
+    const mobileLayoutQuery = window.matchMedia("(max-width: 700px)");
+    function syncMobileSidebar() {
+      if (mobileLayoutQuery.matches) {
+        sidebarHandle.style.display = "block";
+        gymSidebar.classList.remove("expanded");
+      } else {
+        sidebarHandle.style.display = "none";
+        gymSidebar.classList.remove("expanded");
+      }
+      window.setTimeout(() => map.invalidateSize({ pan: false }), 250);
+    }
+    let sidebarTouchStartY = null;
+    sidebarHandle.addEventListener("touchstart", event => {
+      sidebarTouchStartY = event.touches[0].clientY;
+    }, { passive: true });
+    sidebarHandle.addEventListener("touchend", event => {
+      if (sidebarTouchStartY === null) return;
+      const delta = event.changedTouches[0].clientY - sidebarTouchStartY;
+      if (delta < -18) gymSidebar.classList.add("expanded");
+      else if (delta > 18) gymSidebar.classList.remove("expanded");
+      sidebarTouchStartY = null;
+      window.setTimeout(() => map.invalidateSize({ pan: false }), 250);
+    }, { passive: true });
+    sidebarHandle.addEventListener("click", () => {
+      if (!mobileLayoutQuery.matches) return;
+      gymSidebar.classList.toggle("expanded");
+      window.setTimeout(() => map.invalidateSize({ pan: false }), 250);
+    });
+    sidebarHandle.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        gymSidebar.classList.toggle("expanded");
+        window.setTimeout(() => map.invalidateSize({ pan: false }), 250);
+      }
+    });
+    mobileLayoutQuery.addEventListener?.("change", syncMobileSidebar);
+    syncMobileSidebar();
     L.tileLayer(
       "https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png?key=cb1_4l07_1_83499e6c83816a4c71e568a7",
       {
@@ -604,11 +650,11 @@
           <p><span class="detail-label">이용시간:</span> ${gym.hours || "정보 없음"}</p>
           <div class="difficulty-title">난이도</div>
           ${difficultyHTML}
-          <p><span class="detail-label">단체 할인:</span> ${gym.groupDiscount || "정보 없음"}</p>
+          <p><span class="detail-label">단체 할인 혜택:</span> ${gym.groupDiscount || "정보 없음"}</p>
           <p><span class="detail-label">대관 비용:</span> ${gym.rentalCost || "정보 없음"}</p>
-          <p><span class="detail-label">삼각대:</span> ${tripodText}</p>
+          <p><span class="detail-label">삼각대 유무:</span> ${tripodText}</p>
           <p><span class="detail-label">휴무요일:</span> ${gym.closedDays || "정보 없음"}</p>
-          <p><span class="detail-label">자판기:</span> ${gym.vendingMachine || "정보 없음"}</p>
+          <p><span class="detail-label">자판기 유무:</span> ${gym.vendingMachine || "정보 없음"}</p>
         </div>
       `;
     }
@@ -770,8 +816,8 @@
 
           // 모바일에서는 지도 영역을 화면 맨 위쪽으로 가져와 지도 중심으로 보여 줍니다.
           if (isMobile) {
-            const top = mapElement.getBoundingClientRect().top + window.scrollY;
-            window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+            gymSidebar.classList.remove("expanded");
+            window.scrollTo({ top: 0, behavior: "smooth" });
           }
 
           // 지도 크기 재계산 후 암장 마커와 정보 팝업을 중앙에 배치합니다.
