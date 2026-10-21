@@ -52,6 +52,23 @@
     /* 지도 기본 마커를 약 2/3 크기로 축소 */
     #map .leaflet-marker-icon:not(.favorite-star-marker) { width:17px !important; height:27px !important; margin-left:-8px !important; margin-top:-27px !important; }
     #map .leaflet-marker-shadow { width:25px !important; height:27px !important; margin-left:-8px !important; margin-top:-27px !important; }
+    /* 확대했을 때 마커 바로 아래에 표시되는 암장 이름 라벨 */
+    #map .gym-name-label {
+      display: none;
+      background: #2563eb;
+      color: #ffffff;
+      border: 0;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+      padding: 4px 7px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.25;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    #map .gym-name-label::before { display: none; }
+    #map.gym-labels-visible .gym-name-label { display: block; }
     .leaflet-popup-content-wrapper { border-radius: 12px; }
     .leaflet-popup-content { font-size: 13px; line-height: 1.7; }
     .gym-popup h3 { margin: 0 0 6px; font-size: 16px; }
@@ -778,7 +795,7 @@
           ${difficultyHTML}
           <p><span class="detail-label">단체 할인 혜택:</span> ${gym.groupDiscount || "정보 없음"}</p>
           <p><span class="detail-label">대관 비용:</span> ${gym.rentalCost || "정보 없음"}</p>
-          <p><span class="detail-label">삼각대:</span> ${tripodText}</p>
+          <p><span class="detail-label">삼각대</span> ${tripodText}</p>
           <p><span class="detail-label">휴무요일:</span> ${gym.closedDays || "정보 없음"}</p>
           <p><span class="detail-label">자판기:</span> ${gym.vendingMachine || "정보 없음"}</p>
         </div>
@@ -848,7 +865,15 @@
       popupAnchor: [0, -22]
     });
     const markers = gyms.map(gym => {
-      const marker = L.marker([gym.lat, gym.lng]).bindPopup(createGymPopup(gym), { autoPan: false });
+      const marker = L.marker([gym.lat, gym.lng])
+        .bindPopup(createGymPopup(gym), { autoPan: false })
+        .bindTooltip(gym.name || "이름 없는 암장", {
+          permanent: true,
+          direction: "bottom",
+          offset: [0, 7],
+          className: "gym-name-label",
+          opacity: 1
+        });
       marker._goClimbDefaultIcon = marker.options.icon;
       // 마커를 직접 눌러도 '지도에서 위치 보기'와 같은 위치로 이동합니다.
       marker.on("click", () => {
@@ -867,6 +892,13 @@
       });
       return { gym, marker };
     });
+    // 일정 수준(줌 13) 이상 확대했을 때만 암장 이름을 표시합니다.
+    function updateGymNameLabelVisibility() {
+      map.getContainer().classList.toggle("gym-labels-visible", map.getZoom() >= 13);
+    }
+    map.on("zoomend", updateGymNameLabelVisibility);
+    updateGymNameLabelVisibility();
+
     function updateFavoriteMarkerIcons() {
       markers.forEach(({ gym, marker }) => {
         const isFavorite = myReactions.favorites.has(String(gym.id));
