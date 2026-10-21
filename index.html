@@ -791,7 +791,6 @@
       { key: "moonboard2016", label: "문보드 2016" },
       { key: "moonboard2024", label: "문보드 2024" },
       { key: "shower", label: "샤워부스" },
-      { key: "operating", label: "현재 운영" },
       { key: "trainingZone", label: "트레이닝존" },
       { key: "endurance", label: "지구력" }
     ];
@@ -850,7 +849,6 @@
           <label><input type="checkbox" id="filter-moon2016"> 문보드 2016</label>
           <label><input type="checkbox" id="filter-moon2024"> 문보드 2024</label>
           <label><input type="checkbox" id="filter-shower"> 샤워부스</label>
-          <label><input type="checkbox" id="filter-operating"> 현재 운영 중</label>
           <label><input type="checkbox" id="filter-training-zone"> 트레이닝존</label>
           <label><input type="checkbox" id="filter-endurance"> 지구력</label>
           <button type="button" id="reset-gym-filters">필터 초기화</button>
@@ -953,7 +951,6 @@
       "filter-moon2016",
       "filter-moon2024",
       "filter-shower",
-      "filter-operating",
       "filter-training-zone",
       "filter-endurance"
     ];
@@ -965,7 +962,6 @@
         moonboard2016: document.getElementById("filter-moon2016").checked,
         moonboard2024: document.getElementById("filter-moon2024").checked,
         shower: document.getElementById("filter-shower").checked,
-        operating: document.getElementById("filter-operating").checked,
         trainingZone: document.getElementById("filter-training-zone").checked,
         endurance: document.getElementById("filter-endurance").checked
       };
@@ -978,7 +974,6 @@
           (!filters.moonboard2016 || gym.moonboard2016 === true) &&
           (!filters.moonboard2024 || gym.moonboard2024 === true) &&
           (!filters.shower || gym.shower === true) &&
-          (!filters.operating || gym.operating === true) &&
           (!filters.trainingZone || gym.trainingZone === true) &&
           (!filters.endurance || gym.endurance === true);
         return matchesSearch && matchesFilters;
@@ -1494,11 +1489,11 @@
       const ownerId = currentUser.id;
       try {
         const { data, error } = await supabaseClient.from('private_climbing_data')
-          .select('passes,visits,gym_images').eq('user_id', ownerId).maybeSingle();
+          .select('passes,visits').eq('user_id', ownerId).maybeSingle();
         if (error) throw error;
         if (currentUser?.id !== ownerId) return;
         if (data) {
-          privateUserData = { passes: Array.isArray(data.passes) ? data.passes : [], visits: Array.isArray(data.visits) ? data.visits : [], gymImages: data.gym_images && typeof data.gym_images === 'object' ? data.gym_images : {} };
+          privateUserData = { passes: Array.isArray(data.passes) ? data.passes : [], visits: Array.isArray(data.visits) ? data.visits : [], gymImages: {} };
         } else {
           // 이전 버전에서 이 계정의 브라우저에 저장했던 자료가 있으면 최초 1회 가져옵니다.
           let legacy = { passes: [], visits: [], gymImages: {} };
@@ -1517,7 +1512,7 @@
     }
     async function persistPrivateUserData(ownerId = currentUser?.id) {
       if (!supabaseClient || !ownerId || currentUser?.id !== ownerId || privateDataOwnerId && privateDataOwnerId !== ownerId) return;
-      const payload = { user_id: ownerId, passes: privateUserData.passes, visits: privateUserData.visits, gym_images: privateUserData.gymImages || {}, updated_at: new Date().toISOString() };
+      const payload = { user_id: ownerId, passes: privateUserData.passes, visits: privateUserData.visits, updated_at: new Date().toISOString() };
       privateSaveQueue = privateSaveQueue.then(async () => {
         if (currentUser?.id !== ownerId) return;
         const { error } = await supabaseClient.from('private_climbing_data').upsert(payload, { onConflict: 'user_id' });
