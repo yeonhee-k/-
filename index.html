@@ -49,12 +49,9 @@
     .facility-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
     .facility-tag { display: inline-block; padding: 5px 8px; border-radius: 6px; background: #edf4ff; color: #2563eb; font-size: 11px; font-weight: 700; }
     #map { width: 100%; height: 100%; min-height: 500px; background: #e7f0fa; z-index: 1; }
-    /* 마커의 실제 기준점(anchor)은 Leaflet이 관리하게 두고, 시각적 크기만 줄입니다.
-       width/height와 margin을 강제로 바꾸면 화면 크기에 따라 라벨 중심이 어긋날 수 있습니다. */
-    #map .leaflet-marker-icon:not(.favorite-star-marker) {
-      transform: scale(0.68);
-      transform-origin: 50% 100%;
-    }
+    /* 지도 기본 마커를 약 2/3 크기로 축소 */
+    #map .leaflet-marker-icon:not(.favorite-star-marker) { width:17px !important; height:27px !important; margin-left:-8px !important; margin-top:-27px !important; }
+    #map .leaflet-marker-shadow { width:25px !important; height:27px !important; margin-left:-8px !important; margin-top:-27px !important; }
     /* 확대했을 때 마커 바로 아래에 표시되는 암장 이름 라벨 */
     #map .gym-name-label {
       display: none;
@@ -71,12 +68,16 @@
       pointer-events: none;
     }
     #map .gym-name-label::before { display: none; }
-    /* 암장 이름은 마커 기준점의 수직 아래에, 가로 중앙 정렬로 고정합니다. */
-    #map .leaflet-tooltip-bottom.gym-name-label {
-      margin-top: 8px !important;
-      transform: translateX(-50%);
-      left: 50% !important;
+    /* Leaflet 툴팁의 방향을 아래쪽으로 고정하고 마커와 간격을 조금 더 둡니다. */
+    #map .leaflet-tooltip.gym-name-label {
+      /* Leaflet 툴팁의 왼쪽 가장자리가 아니라 마커 중심을 기준으로 정렬 */
+      margin-left: 0 !important;
+      transform: translate3d(-50%, 0, 0) !important;
+      text-align: center;
+      box-sizing: border-box;
     }
+    #map .leaflet-tooltip-bottom.gym-name-label { margin-top: 9px !important; }
+    #map .leaflet-tooltip-top.gym-name-label { margin-bottom: 9px !important; }
     #map.gym-labels-visible .gym-name-label { display: block; }
     .leaflet-popup-content-wrapper { border-radius: 12px; }
     .leaflet-popup-content { font-size: 13px; line-height: 1.7; }
@@ -911,7 +912,7 @@
         .bindTooltip(gym.name || "이름 없는 암장", {
           permanent: true,
           direction: "bottom",
-          offset: [0, 8],
+          offset: [0, 0],
           className: "gym-name-label",
           opacity: 1
         });
@@ -939,25 +940,6 @@
     }
     map.on("zoomend", updateGymNameLabelVisibility);
     updateGymNameLabelVisibility();
-
-    // 화면 회전, 창 크기 변경, 모바일 레이아웃 변화 후에도 마커/라벨의 기준점을 재계산합니다.
-    let mapResizeFrame = null;
-    const refreshMapSize = () => {
-      if (mapResizeFrame !== null) cancelAnimationFrame(mapResizeFrame);
-      mapResizeFrame = requestAnimationFrame(() => {
-        map.invalidateSize({ pan: false, debounceMoveend: true });
-        markers.forEach(({ marker }) => {
-          if (marker.getTooltip() && marker.isTooltipOpen()) marker.closeTooltip().openTooltip();
-        });
-        mapResizeFrame = null;
-      });
-    };
-    window.addEventListener("resize", refreshMapSize, { passive: true });
-    window.addEventListener("orientationchange", refreshMapSize, { passive: true });
-    if (window.ResizeObserver) {
-      const mapResizeObserver = new ResizeObserver(refreshMapSize);
-      mapResizeObserver.observe(map.getContainer());
-    }
 
     function updateFavoriteMarkerIcons() {
       markers.forEach(({ gym, marker }) => {
@@ -1093,7 +1075,14 @@
       renderGyms();
     });
 
-    window.addEventListener("resize", () => map.invalidateSize());
+    window.addEventListener("resize", () => {
+      map.invalidateSize({ pan: false });
+      window.setTimeout(() => map.invalidateSize({ pan: false }), 150);
+    });
+    if (window.ResizeObserver) {
+      const mapResizeObserver = new ResizeObserver(() => map.invalidateSize({ pan: false }));
+      mapResizeObserver.observe(document.getElementById("map"));
+    }
 
     // ===== GO climb 회원/투표/즐겨찾기 =====
     // 1) Supabase 프로젝트를 만든 뒤 아래 두 값을 본인 프로젝트 값으로 교체하세요.
