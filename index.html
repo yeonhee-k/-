@@ -49,9 +49,7 @@
     .facility-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
     .facility-tag { display: inline-block; padding: 5px 8px; border-radius: 6px; background: #edf4ff; color: #2563eb; font-size: 11px; font-weight: 700; }
     #map { width: 100%; height: 100%; min-height: 500px; background: #e7f0fa; z-index: 1; }
-    /* 지도 기본 마커를 약 2/3 크기로 축소 */
-    #map .leaflet-marker-icon:not(.favorite-star-marker) { width:17px !important; height:27px !important; margin-left:-8px !important; margin-top:-27px !important; }
-    #map .leaflet-marker-shadow { width:25px !important; height:27px !important; margin-left:-8px !important; margin-top:-27px !important; }
+    /* Leaflet 마커의 실제 크기와 iconAnchor를 유지해 좌표와 라벨이 어긋나지 않게 합니다. */
     /* 확대했을 때 마커 바로 아래에 표시되는 암장 이름 라벨 */
     #map .gym-name-label {
       display: none;
@@ -68,16 +66,9 @@
       pointer-events: none;
     }
     #map .gym-name-label::before { display: none; }
-    /* Leaflet 툴팁의 방향을 아래쪽으로 고정하고 마커와 간격을 조금 더 둡니다. */
-    #map .leaflet-tooltip.gym-name-label {
-      /* Leaflet 툴팁의 왼쪽 가장자리가 아니라 마커 중심을 기준으로 정렬 */
-      margin-left: 0 !important;
-      transform: translate3d(-50%, 0, 0) !important;
-      text-align: center;
-      box-sizing: border-box;
-    }
+    /* Leaflet이 각 마커의 좌표를 기준으로 툴팁을 가운데 배치합니다. */
+    #map .leaflet-tooltip.gym-name-label { margin-left: 0 !important; }
     #map .leaflet-tooltip-bottom.gym-name-label { margin-top: 9px !important; }
-    #map .leaflet-tooltip-top.gym-name-label { margin-bottom: 9px !important; }
     #map.gym-labels-visible .gym-name-label { display: block; }
     .leaflet-popup-content-wrapper { border-radius: 12px; }
     .leaflet-popup-content { font-size: 13px; line-height: 1.7; }
@@ -912,7 +903,7 @@
         .bindTooltip(gym.name || "이름 없는 암장", {
           permanent: true,
           direction: "bottom",
-          offset: [0, 0],
+          offset: [0, 12],
           className: "gym-name-label",
           opacity: 1
         });
@@ -1075,14 +1066,7 @@
       renderGyms();
     });
 
-    window.addEventListener("resize", () => {
-      map.invalidateSize({ pan: false });
-      window.setTimeout(() => map.invalidateSize({ pan: false }), 150);
-    });
-    if (window.ResizeObserver) {
-      const mapResizeObserver = new ResizeObserver(() => map.invalidateSize({ pan: false }));
-      mapResizeObserver.observe(document.getElementById("map"));
-    }
+    window.addEventListener("resize", () => map.invalidateSize());
 
     // ===== GO climb 회원/투표/즐겨찾기 =====
     // 1) Supabase 프로젝트를 만든 뒤 아래 두 값을 본인 프로젝트 값으로 교체하세요.
