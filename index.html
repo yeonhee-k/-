@@ -94,9 +94,22 @@
     .details-content p { margin: 10px 0; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
     .detail-label { color: var(--navy); font-weight: 700; }
     .difficulty-title { margin: 12px 0 7px; color: var(--navy); font-size: 13px; font-weight: 700; }
-    .difficulty-list { display: flex; flex-direction: column; gap: 0; width: 100%; border-radius: 5px; overflow: hidden; }
-    .difficulty-level { display: flex; align-items: center; min-height: 30px; padding: 6px 10px; color: #fff; font-size: 12px; font-weight: 700; text-shadow: 0 1px 2px #0005; }
+    /* 난이도: 색상 막대를 가로로 배열하고 쉬움~어려움 범위를 표시 */
+    .difficulty-scale { width: 100%; max-width: 250px; padding: 5px 0 2px; }
+    .difficulty-list { display: flex; align-items: flex-end; justify-content: flex-start; gap: 9px; min-height: 83px; padding: 2px 0 10px; overflow: visible; }
+    .difficulty-level { flex: 0 0 15px; width: 15px; height: 76px; min-height: 0; padding: 0; border-radius: 8px; transform: rotate(-5deg); box-shadow: inset 0 0 0 1px #00000008; }
+    .difficulty-level:nth-child(even) { transform: rotate(-8deg); height: 68px; }
+    .difficulty-level:nth-child(3n) { height: 74px; transform: rotate(-4deg); }
+    .difficulty-caption { display: flex; justify-content: space-between; border-top: 2px solid #333; padding-top: 5px; color: #333; font-size: 10px; }
     .difficulty-empty { color: var(--muted); font-size: 12px; margin: 6px 0; }
+    .rental-table { width: 100%; margin: 9px 0 15px; border-collapse: collapse; table-layout: fixed; border: 1px solid #d5dce5; font-size: 12px; line-height: 1.45; }
+    .rental-table th, .rental-table td { border: 1px solid #d5dce5; padding: 7px 9px; text-align: left; overflow-wrap: anywhere; }
+    .rental-table th { background: #e8f0fa; color: var(--navy); font-weight: 700; }
+    .rental-table .rental-time-title, .rental-table .rental-time { text-align: center; }
+    .rental-table .rental-time-title { background: #dce9f8; }
+    .rental-table .rental-time { background: #fff; font-weight: 600; }
+    .rental-table td:first-child { width: 48%; background: #f7f9fc; }
+    .rental-table td:last-child { background: #fff; }
 
 
     /* 회원 기능 */
@@ -805,16 +818,64 @@
         .join("");
     }
 
-    // 상세 정보 HTML: 난이도는 세로로 긴 색상 칸으로 표시
+    // 대관 내용을 이용시간 + 조건별 표로 정리합니다.
+    function createRentalTable(gym) {
+      const raw = (gym.rentalCost || "").trim();
+      if (!raw || raw === "정보 없음") {
+        return `<p><span class="detail-label">대관 정보:</span> 정보 없음</p>`;
+      }
+
+      const timeMatch = raw.match(/\d{1,2}:\d{2}\s*[-~–]\s*\d{1,2}:\d{2}/);
+      const rentalTime = timeMatch ? timeMatch[0].replace(/\s*[-~–]\s*/, " - ") : "별도 문의";
+      let remainder = timeMatch ? raw.replace(timeMatch[0], "") : raw;
+      remainder = remainder.replace(/^\s*[·,/]+\s*/, "").trim();
+
+      const rows = [];
+      // 인원별 금액을 각각 한 행으로 분리
+      const personPrices = [...remainder.matchAll(/(\d+\s*인)\s*([\d,]+\s*만원)/g)];
+      if (personPrices.length) {
+        personPrices.forEach(m => rows.push({ label: m[1].replace(/\s+/g, ""), value: m[2].replace(/\s+/g, "") }));
+        remainder = remainder.replace(/\d+\s*인\s*[\d,]+\s*만원/g, "");
+      }
+      remainder.split(/[\/·]/).map(v => v.trim()).filter(Boolean).forEach((part, i) => {
+        if (!part) return;
+        const clean = part.replace(/^[-,\s]+/, "").trim();
+        if (!clean) return;
+        const extraMatch = clean.match(/^(마감시간|시간연장|시간 추가|1시간 추가|인원추가|인원 추가)\s*(.*)$/);
+        if (extraMatch) rows.push({ label: extraMatch[1], value: extraMatch[2] || "별도 문의" });
+        else if (!personPrices.length || !/^(?:마감시간|시간연장|시간 추가|1시간 추가|인원추가|인원 추가)/.test(clean)) {
+          rows.push({ label: "대관 조건", value: clean });
+        }
+      });
+      if (!rows.length) rows.push({ label: "대관 조건", value: raw });
+
+      return `
+        <div class="rental-info-wrap">
+          <div class="detail-label">대관 정보</div>
+          <table class="rental-table">
+            <thead>
+              <tr><th colspan="2" class="rental-time-title">이용시간</th></tr>
+              <tr><td colspan="2" class="rental-time">${rentalTime}</td></tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => `<tr><td>${row.label}</td><td>${row.value}</td></tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    // 상세 정보 HTML: 난이도는 색상 막대를 가로로 표시합니다.
     function createDetailsHTML(gym) {
       const difficulty = Array.isArray(gym.difficulty) ? gym.difficulty : [];
       const difficultyHTML = difficulty.length
-        ? `<div class="difficulty-list">
-            ${difficulty.map(level => `
-              <div class="difficulty-level" style="background:${level.color || "#718096"}">
-                ${level.name || "난이도"}
-              </div>
-            `).join("")}
+        ? `<div class="difficulty-scale">
+            <div class="difficulty-list">
+              ${difficulty.map(level => `
+                <div class="difficulty-level" title="${level.name || "난이도"}" style="background:${level.color || "#718096"}"></div>
+              `).join("")}
+            </div>
+            <div class="difficulty-caption"><span>쉬움</span><span>어려움</span></div>
           </div>`
         : `<p class="difficulty-empty">난이도 정보 없음</p>`;
 
@@ -830,7 +891,7 @@
           <div class="difficulty-title">난이도</div>
           ${difficultyHTML}
           <p><span class="detail-label">단체 할인 혜택:</span> ${gym.groupDiscount || "정보 없음"}</p>
-          <p><span class="detail-label">대관 비용:</span> ${gym.rentalCost || "정보 없음"}</p>
+          ${createRentalTable(gym)}
           <p><span class="detail-label">삼각대 유무:</span> ${tripodText}</p>
           <p><span class="detail-label">휴무요일:</span> ${gym.closedDays || "정보 없음"}</p>
           <p><span class="detail-label">자판기 유무:</span> ${gym.vendingMachine || "정보 없음"}</p>
