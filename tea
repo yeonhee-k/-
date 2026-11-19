@@ -1,1 +1,151 @@
-
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tea Blending Notes</title>
+<style>
+:root{--bg:#f5f3ed;--paper:#fffefa;--ink:#29352c;--muted:#7b8278;--green:#536c57;--line:#e4e4da;--accent:#d8e1d2;--gold:#c4a76a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard","Noto Sans KR",system-ui,-apple-system,sans-serif}
+header{padding:34px 24px 26px;background:linear-gradient(120deg,#e8eee4,#f5f3ed);border-bottom:1px solid var(--line)}
+.head{max-width:1250px;margin:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:20px}
+.kicker{font-size:11px;letter-spacing:.2em;color:var(--green);font-weight:700}
+h1{margin:8px 0 6px;font-size:clamp(26px,4vw,38px);font-weight:650;letter-spacing:-.04em}
+.sub{color:var(--muted);font-size:14px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{border:0;cursor:pointer;font:inherit}
+.btn{padding:10px 15px;border-radius:10px;background:var(--green);color:white;font-size:13px;font-weight:650}
+.btn.secondary{background:white;color:var(--green);border:1px solid var(--line)}
+main{max-width:1250px;margin:24px auto;padding:0 20px 50px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.count{font-size:13px;color:var(--muted)} .count strong{color:var(--ink)}
+.table-wrap{background:var(--paper);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 4px 22px #29352c08}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead th{padding:13px 10px;text-align:left;font-size:12px;color:#58665a;background:#f7f8f3;border-bottom:1px solid var(--line);font-weight:700}
+thead th:nth-child(1){width:10%}thead th:nth-child(2){width:17%}thead th:nth-child(3){width:9%}thead th:nth-child(4){width:10%}thead th:nth-child(5){width:15%}thead th:nth-child(6){width:15%}thead th:nth-child(7){width:20%}thead th:nth-child(8){width:4%}
+.filter-row th{padding:7px 6px;background:#fbfbf8;border-bottom:1px solid var(--line)}
+.filter{width:100%;min-width:0;padding:8px 7px;border:1px solid #e5e7df;border-radius:8px;background:white;font-size:12px;outline:none}
+.filter:focus{border-color:#9eaf9e;box-shadow:0 0 0 2px #d8e1d255}
+td{padding:14px 10px;border-bottom:1px solid #eeeee8;vertical-align:top;font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+tbody tr:hover{background:#fcfcf8}
+.category{display:inline-block;padding:4px 8px;border-radius:99px;background:#edf1e9;color:#526b56;font-size:11px;font-weight:700}
+.name{font-weight:700;font-size:14px}
+.caffeine{display:inline-block;border:1px solid var(--line);padding:3px 7px;border-radius:6px;font-size:11px;white-space:nowrap}
+.desc{color:#626b61}
+.row-actions{display:flex;flex-direction:column;gap:5px}
+.icon-btn{font-size:12px;color:#737a71;background:transparent;padding:3px}
+.empty{text-align:center;padding:55px 20px;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);margin-bottom:8px}
+.mobile-cards{display:none}
+dialog{border:0;border-radius:18px;padding:0;width:min(620px,calc(100% - 24px));box-shadow:0 25px 80px #0003}
+dialog::backdrop{background:#17251b66;backdrop-filter:blur(2px)}
+.modal-head{padding:20px 23px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.modal-head h2{margin:0;font-size:18px}
+.modal-body{padding:20px 23px;max-height:70vh;overflow:auto}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.field.full{grid-column:1/-1}
+label{display:block;font-size:12px;color:#667066;margin-bottom:6px;font-weight:650}
+input,select,textarea{width:100%;border:1px solid #e0e3da;border-radius:9px;padding:10px 11px;font:inherit;font-size:13px;background:#fff;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#93a793}
+textarea{min-height:78px;resize:vertical}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:15px 23px;border-top:1px solid var(--line)}
+.note{font-size:12px;color:var(--muted);margin-top:14px}
+@media(max-width:850px){.table-wrap{display:none}.mobile-cards{display:grid;gap:11px}.tea-card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:15px}.card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.card-name{font-size:16px;font-weight:750;margin:7px 0}.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.card-field small{display:block;color:var(--muted);font-size:11px;margin-bottom:3px}.card-field{font-size:13px;line-height:1.5}.card-field.full{grid-column:1/-1}.card-buttons{display:flex;gap:8px}.head{align-items:flex-start;flex-direction:column}.toolbar{align-items:flex-start}}
+@media(max-width:480px){header{padding:25px 18px}main{padding:0 13px 35px}.actions{width:100%}.actions button{flex:1}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<header>
+  <div class="head">
+    <div>
+      <div class="kicker">PERSONAL TEA LIBRARY</div>
+      <h1>Tea Blending Notes</h1>
+      <div class="sub">나만의 차 기록장 · 향과 맛을 기록하고 찾아보세요</div>
+    </div>
+    <div class="actions">
+      <button class="btn secondary" id="exportBtn">내 데이터 내보내기</button>
+      <button class="btn secondary" id="importBtn">데이터 가져오기</button>
+      <button class="btn" id="addBtn">＋ 차 추가하기</button>
+    </div>
+  </div>
+</header>
+<main>
+  <div class="toolbar"><div class="count">등록된 차 <strong id="count">0</strong>종 · 검색어를 입력하면 즉시 필터링됩니다</div><button class="btn secondary" id="clearFilters">검색 초기화</button></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>구분</th><th>상품명</th><th>수색</th><th>카페인</th><th>향</th><th>맛</th><th>티 설명</th><th></th></tr>
+        <tr class="filter-row">
+          <th><input class="filter" data-key="category" placeholder="구분 검색"></th>
+          <th><input class="filter" data-key="name" placeholder="상품명 검색"></th>
+          <th><input class="filter" data-key="color" placeholder="수색 검색"></th>
+          <th><input class="filter" data-key="caffeine" placeholder="유무 검색"></th>
+          <th><input class="filter" data-key="aroma" placeholder="향 검색"></th>
+          <th><input class="filter" data-key="taste" placeholder="맛 검색"></th>
+          <th><input class="filter" data-key="description" placeholder="설명 검색"></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="mobile-cards" id="cards"></div>
+</main>
+<dialog id="editor">
+  <form id="teaForm">
+    <div class="modal-head"><h2 id="modalTitle">차 추가하기</h2><button type="button" class="icon-btn" id="closeModal">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><label>구분</label><input name="category" placeholder="예: 홍차, 녹차, 허브차"></div>
+        <div class="field"><label>상품명 *</label><input name="name" required placeholder="차 이름 / 제품명"></div>
+        <div class="field"><label>수색</label><input name="color" placeholder="예: 붉은 갈색, 연한 황금색"></div>
+        <div class="field"><label>카페인 유무</label><select name="caffeine"><option value="">선택</option><option>있음</option><option>없음</option><option>적음</option><option>모름</option></select></div>
+        <div class="field"><label>향</label><textarea name="aroma" placeholder="향의 특징"></textarea></div>
+        <div class="field"><label>맛</label><textarea name="taste" placeholder="맛의 특징"></textarea></div>
+        <div class="field full"><label>티 설명</label><textarea name="description" placeholder="산지, 원료, 블렌딩 메모, 우림 방법 등"></textarea></div>
+      </div>
+      <div class="note">입력한 데이터는 현재 브라우저에 자동 저장됩니다. 백업을 위해 데이터 내보내기를 이용하세요.</div>
+    </div>
+    <div class="modal-foot"><button type="button" class="btn secondary" id="cancelBtn">취소</button><button type="submit" class="btn">저장하기</button></div>
+  </form>
+</dialog>
+<input type="file" id="fileInput" accept=".json,application/json" hidden>
+<script>
+const STORAGE_KEY='teaBlendingNotes_v1';
+let teas=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+let editingId=null;
+const filters=[...document.querySelectorAll('.filter')];
+const tbody=document.getElementById('tbody'),cards=document.getElementById('cards');
+const fields=['category','name','color','caffeine','aroma','taste','description'];
+const labels={category:'구분',name:'상품명',color:'수색',caffeine:'카페인 유무',aroma:'향',taste:'맛',description:'티 설명'};
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(teas));render()}
+function norm(s){return String(s||'').toLowerCase().replace(/\s+/g,'')}
+function chosung(str){const initials='ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';return [...String(str||'')].map(ch=>{const c=ch.charCodeAt(0)-44032;if(c>=0&&c<=11171)return initials[Math.floor(c/588)];return ch}).join('')}
+function matches(text,query){if(!query)return true;const t=norm(text),q=norm(query);if(t.includes(q))return true;return chosung(text).includes(q)}
+function filtered(){return teas.filter(t=>filters.every(f=>matches(t[f.dataset.key],f.value)))}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function render(){
+ const list=filtered();document.getElementById('count').textContent=`${list.length} / ${teas.length}`;
+ tbody.innerHTML=list.map(t=>`<tr>
+ <td><span class="category">${esc(t.category||'미분류')}</span></td><td><div class="name">${esc(t.name)}</div></td>
+ <td>${esc(t.color)}</td><td>${t.caffeine?`<span class="caffeine">${esc(t.caffeine)}</span>`:''}</td>
+ <td>${esc(t.aroma)}</td><td>${esc(t.taste)}</td><td class="desc">${esc(t.description)}</td>
+ <td><div class="row-actions"><button class="icon-btn" data-edit="${t.id}">수정</button><button class="icon-btn" data-del="${t.id}">삭제</button></div></td></tr>`).join('')||`<tr><td colspan="8"><div class="empty"><strong>${teas.length?'검색 결과가 없습니다':'아직 등록한 차가 없습니다'}</strong>${teas.length?'검색어를 지우거나 다른 단어를 입력해보세요':'＋ 차 추가하기 버튼으로 첫 차를 등록해보세요.'}</div></td></tr>`;
+ cards.innerHTML=list.map(t=>`<article class="tea-card"><div class="card-top"><div><span class="category">${esc(t.category||'미분류')}</span><div class="card-name">${esc(t.name)}</div></div><div class="card-buttons"><button class="icon-btn" data-edit="${t.id}">수정</button><button class="icon-btn" data-del="${t.id}">삭제</button></div></div><div class="card-grid">${fields.filter(k=>k!=='category'&&k!=='name').map(k=>`<div class="card-field ${k==='description'?'full':''}"><small>${labels[k]}</small>${esc(t[k]||'—')}</div>`).join('')}</div></article>`).join('')||`<div class="empty"><strong>${teas.length?'검색 결과가 없습니다':'아직 등록한 차가 없습니다'}</strong>차 추가하기 버튼으로 기록을 시작해보세요.</div>`;
+}
+filters.forEach(f=>f.addEventListener('input',render));
+document.getElementById('clearFilters').onclick=()=>{filters.forEach(f=>f.value='');render()};
+const dlg=document.getElementById('editor'),form=document.getElementById('teaForm');
+function openEditor(t=null){editingId=t?.id||null;form.reset();if(t)fields.forEach(k=>form.elements[k].value=t[k]||'');document.getElementById('modalTitle').textContent=t?'차 수정하기':'차 추가하기';dlg.showModal()}
+document.getElementById('addBtn').onclick=()=>openEditor();
+document.getElementById('closeModal').onclick=document.getElementById('cancelBtn').onclick=()=>dlg.close();
+form.onsubmit=e=>{e.preventDefault();const data=Object.fromEntries(fields.map(k=>[k,form.elements[k].value.trim()]));if(editingId){teas=teas.map(t=>t.id===editingId?{...t,...data}:t)}else teas.unshift({id:crypto.randomUUID(),...data});save();dlg.close()};
+document.addEventListener('click',e=>{const edit=e.target.closest('[data-edit]');const del=e.target.closest('[data-del]');if(edit){openEditor(teas.find(t=>t.id===edit.dataset.edit))}if(del){const t=teas.find(t=>t.id===del.dataset.del);if(confirm(`"${t.name}" 기록을 삭제할까요?`)){teas=teas.filter(x=>x.id!==t.id);save()}}});
+document.getElementById('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(teas,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tea-blending-notes.json';a.click();URL.revokeObjectURL(a.href)};
+document.getElementById('importBtn').onclick=()=>document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const imported=JSON.parse(await file.text());if(!Array.isArray(imported))throw new Error();if(confirm(`${imported.length}개 데이터를 가져올까요? 기존 데이터는 유지하고 추가됩니다.`)){const ids=new Set(teas.map(t=>t.id));teas.push(...imported.map(t=>({...t,id:ids.has(t.id)?crypto.randomUUID():(t.id||crypto.randomUUID())})));save()}}catch{alert('JSON 파일을 읽을 수 없습니다. 내보낸 데이터 파일인지 확인해주세요.')}e.target.value=''};
+render();
+</script>
+</body>
+</html>
